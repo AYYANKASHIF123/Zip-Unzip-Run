@@ -1,22 +1,34 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Gene Expression Cancer Classifier API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: analyses
+  - name: results
+  - name: metrics
+  - name: dashboard
+  - name: genomics
+  - name: survival
+  - name: drugs
+  - name: genes
+  - name: pathways
+  - name: pipeline
+  - name: reports
+  - name: notifications
+  - name: datasets
+  - name: comparison
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +36,1298 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Dashboard summary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /analyses:
+    get:
+      operationId: listAnalyses
+      tags: [analyses]
+      summary: List all analyses
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Analysis"
+    post:
+      operationId: createAnalysis
+      tags: [analyses]
+      summary: Submit a new analysis
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalysisInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analysis"
+
+  /analyses/{id}:
+    get:
+      operationId: getAnalysis
+      tags: [analyses]
+      summary: Get analysis by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Analysis"
+        "404":
+          description: Not found
+
+  /analyses/{id}/results:
+    get:
+      operationId: getAnalysisResults
+      tags: [results]
+      summary: Get classification results
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassificationResult"
+        "404":
+          description: Not found
+
+  /metrics/model-performance:
+    get:
+      operationId: getModelPerformance
+      tags: [metrics]
+      summary: Model evaluation metrics
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelPerformance"
+
+  /metrics/confusion-matrix:
+    get:
+      operationId: getConfusionMatrix
+      tags: [metrics]
+      summary: Confusion matrix data
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfusionMatrix"
+
+  /metrics/roc-curves:
+    get:
+      operationId: getRocCurves
+      tags: [metrics]
+      summary: ROC curve data per subtype
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RocCurve"
+
+  /metrics/pr-curves:
+    get:
+      operationId: getPrCurves
+      tags: [metrics]
+      summary: Precision-Recall curves
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PrCurve"
+
+  /biomarkers:
+    get:
+      operationId: listBiomarkers
+      tags: [results]
+      summary: List top biomarkers
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Biomarker"
+
+  /cancer-subtypes:
+    get:
+      operationId: listCancerSubtypes
+      tags: [results]
+      summary: Cancer subtypes distribution
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CancerSubtype"
+
+  /genomics/heatmap:
+    get:
+      operationId: getHeatmapData
+      tags: [genomics]
+      summary: Gene expression heatmap data
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HeatmapData"
+
+  /genomics/pca:
+    get:
+      operationId: getPcaData
+      tags: [genomics]
+      summary: PCA dimensionality reduction coordinates
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PcaData"
+
+  /genomics/volcano:
+    get:
+      operationId: getVolcanoData
+      tags: [genomics]
+      summary: Volcano plot differential expression data
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolcanoData"
+
+  /genomics/umap:
+    get:
+      operationId: getUmapData
+      tags: [genomics]
+      summary: UMAP embedding coordinates
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UmapData"
+
+  /survival/kaplan-meier:
+    get:
+      operationId: getKaplanMeier
+      tags: [survival]
+      summary: Kaplan-Meier survival curves per subtype
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SurvivalData"
+
+  /drugs/sensitivity:
+    get:
+      operationId: getDrugSensitivity
+      tags: [drugs]
+      summary: Drug sensitivity predictions
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DrugSensitivity"
+
+  /drugs/recommendations/{subtypeId}:
+    get:
+      operationId: getDrugRecommendations
+      tags: [drugs]
+      summary: Drug recommendations for a cancer subtype
+      parameters:
+        - name: subtypeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DrugRecommendation"
+
+  /genes/search:
+    get:
+      operationId: searchGenes
+      tags: [genes]
+      summary: Search gene database
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Gene"
+
+  /genes/{geneId}:
+    get:
+      operationId: getGene
+      tags: [genes]
+      summary: Get gene details
+      parameters:
+        - name: geneId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeneDetail"
+
+  /pathways/enrichment:
+    get:
+      operationId: getPathwayEnrichment
+      tags: [pathways]
+      summary: Pathway enrichment analysis results
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PathwayResult"
+
+  /pathways/go-terms:
+    get:
+      operationId: getGoTerms
+      tags: [pathways]
+      summary: Gene Ontology term enrichment
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GoTerm"
+
+  /pipeline/stages:
+    get:
+      operationId: getPipelineStages
+      tags: [pipeline]
+      summary: ML pipeline stage definitions and status
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PipelineStatus"
+
+  /pipeline/runs:
+    get:
+      operationId: listPipelineRuns
+      tags: [pipeline]
+      summary: List recent pipeline runs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PipelineRun"
+
+  /reports:
+    get:
+      operationId: listReports
+      tags: [reports]
+      summary: List generated reports
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /datasets:
+    get:
+      operationId: listDatasets
+      tags: [datasets]
+      summary: List available datasets
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dataset"
+
+  /comparison/samples:
+    post:
+      operationId: compareSamples
+      tags: [comparison]
+      summary: Compare multiple sample analyses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComparisonInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComparisonResult"
+
+  /network/ppi:
+    get:
+      operationId: getPpiNetwork
+      tags: [genomics]
+      summary: Protein-protein interaction network data
+      parameters:
+        - name: genes
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PpiNetwork"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    DashboardSummary:
+      type: object
+      required: [totalAnalyses, completedAnalyses, pendingAnalyses, overallAccuracy, totalBiomarkersFound, recentAnalyses, subtypeDistribution, weeklyTrend, systemHealth]
+      properties:
+        totalAnalyses:
+          type: integer
+        completedAnalyses:
+          type: integer
+        pendingAnalyses:
+          type: integer
+        overallAccuracy:
+          type: number
+        totalBiomarkersFound:
+          type: integer
+        totalSamples:
+          type: integer
+        avgProcessingTimeMs:
+          type: number
+        recentAnalyses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Analysis"
+        subtypeDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/CancerSubtype"
+        weeklyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyTrendPoint"
+        systemHealth:
+          $ref: "#/components/schemas/SystemHealth"
+
+    WeeklyTrendPoint:
+      type: object
+      required: [date, analyses, accuracy]
+      properties:
+        date:
+          type: string
+        analyses:
+          type: integer
+        accuracy:
+          type: number
+
+    SystemHealth:
+      type: object
+      required: [modelVersion, gpuUtilization, memoryUsage, uptime, lastModelUpdate]
+      properties:
+        modelVersion:
+          type: string
+        gpuUtilization:
+          type: number
+        memoryUsage:
+          type: number
+        uptime:
+          type: string
+        lastModelUpdate:
+          type: string
+
+    Analysis:
+      type: object
+      required: [id, sampleId, dataSource, status, createdAt, patientAge, patientGender, tissueType, stage]
+      properties:
+        id:
+          type: integer
+        sampleId:
+          type: string
+        dataSource:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        cancerSubtype:
+          type: ["string", "null"]
+        confidenceScore:
+          type: ["number", "null"]
+        processingTimeMs:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+        patientAge:
+          type: ["integer", "null"]
+        patientGender:
+          type: ["string", "null"]
+        tissueType:
+          type: ["string", "null"]
+        stage:
+          type: ["string", "null"]
+        geneCount:
+          type: ["integer", "null"]
+
+    AnalysisInput:
+      type: object
+      required: [sampleId, dataSource]
+      properties:
+        sampleId:
+          type: string
+        dataSource:
+          type: string
+        geneExpressionData:
+          type: ["string", "null"]
+        patientAge:
+          type: ["integer", "null"]
+        patientGender:
+          type: ["string", "null"]
+        tissueType:
+          type: ["string", "null"]
+        stage:
+          type: ["string", "null"]
+
+    ClassificationResult:
+      type: object
+      required: [analysisId, predictedSubtype, confidenceScore, topBiomarkers, treatmentPathways, subtypeProbabilities, molecularSignature, clinicalNotes]
+      properties:
+        analysisId:
+          type: integer
+        predictedSubtype:
+          type: string
+        confidenceScore:
+          type: number
+        topBiomarkers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Biomarker"
+        treatmentPathways:
+          type: array
+          items:
+            type: string
+        subtypeProbabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubtypeProbability"
+        molecularSignature:
+          type: array
+          items:
+            type: string
+        clinicalNotes:
+          type: string
+
+    SubtypeProbability:
+      type: object
+      required: [subtype, probability]
+      properties:
+        subtype:
+          type: string
+        probability:
+          type: number
+
+    Biomarker:
+      type: object
+      required: [geneId, geneName, expressionLevel, significance, cancerSubtype]
+      properties:
+        geneId:
+          type: string
+        geneName:
+          type: string
+        expressionLevel:
+          type: number
+        significance:
+          type: number
+        cancerSubtype:
+          type: string
+        chromosome:
+          type: ["string", "null"]
+        function:
+          type: ["string", "null"]
+
+    CancerSubtype:
+      type: object
+      required: [name, count, percentage, color]
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        percentage:
+          type: number
+        color:
+          type: string
+        fiveYearSurvival:
+          type: ["number", "null"]
+        medianAge:
+          type: ["integer", "null"]
+
+    ModelPerformance:
+      type: object
+      required: [overallAccuracy, overallPrecision, overallRecall, overallF1Score, perSubtypeMetrics, trainingHistory]
+      properties:
+        overallAccuracy:
+          type: number
+        overallPrecision:
+          type: number
+        overallRecall:
+          type: number
+        overallF1Score:
+          type: number
+        aucRoc:
+          type: ["number", "null"]
+        perSubtypeMetrics:
+          type: array
+          items:
+            $ref: "#/components/schemas/SubtypeMetric"
+        trainingHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/TrainingEpoch"
+
+    SubtypeMetric:
+      type: object
+      required: [subtype, accuracy, precision, recall, f1Score, support]
+      properties:
+        subtype:
+          type: string
+        accuracy:
+          type: number
+        precision:
+          type: number
+        recall:
+          type: number
+        f1Score:
+          type: number
+        support:
+          type: integer
+        aucRoc:
+          type: ["number", "null"]
+
+    TrainingEpoch:
+      type: object
+      required: [epoch, trainLoss, valLoss, trainAccuracy, valAccuracy]
+      properties:
+        epoch:
+          type: integer
+        trainLoss:
+          type: number
+        valLoss:
+          type: number
+        trainAccuracy:
+          type: number
+        valAccuracy:
+          type: number
+
+    ConfusionMatrix:
+      type: object
+      required: [labels, matrix]
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        matrix:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+
+    RocCurve:
+      type: object
+      required: [subtype, auc, points]
+      properties:
+        subtype:
+          type: string
+        auc:
+          type: number
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/RocPoint"
+
+    RocPoint:
+      type: object
+      required: [fpr, tpr]
+      properties:
+        fpr:
+          type: number
+        tpr:
+          type: number
+
+    PrCurve:
+      type: object
+      required: [subtype, ap, points]
+      properties:
+        subtype:
+          type: string
+        ap:
+          type: number
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/PrPoint"
+
+    PrPoint:
+      type: object
+      required: [recall, precision]
+      properties:
+        recall:
+          type: number
+        precision:
+          type: number
+
+    HeatmapData:
+      type: object
+      required: [genes, samples, values, subtypes]
+      properties:
+        genes:
+          type: array
+          items:
+            type: string
+        samples:
+          type: array
+          items:
+            type: string
+        values:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+        subtypes:
+          type: array
+          items:
+            type: string
+
+    PcaData:
+      type: object
+      required: [points, varianceExplained]
+      properties:
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/PcaPoint"
+        varianceExplained:
+          type: array
+          items:
+            type: number
+
+    PcaPoint:
+      type: object
+      required: [sampleId, pc1, pc2, pc3, subtype]
+      properties:
+        sampleId:
+          type: string
+        pc1:
+          type: number
+        pc2:
+          type: number
+        pc3:
+          type: number
+        subtype:
+          type: string
+
+    VolcanoData:
+      type: object
+      required: [points, thresholdFc, thresholdPval]
+      properties:
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/VolcanoPoint"
+        thresholdFc:
+          type: number
+        thresholdPval:
+          type: number
+
+    VolcanoPoint:
+      type: object
+      required: [geneName, log2FoldChange, negLog10Pval, significant, upregulated]
+      properties:
+        geneName:
+          type: string
+        log2FoldChange:
+          type: number
+        negLog10Pval:
+          type: number
+        significant:
+          type: boolean
+        upregulated:
+          type: boolean
+
+    UmapData:
+      type: object
+      required: [points]
+      properties:
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/UmapPoint"
+
+    UmapPoint:
+      type: object
+      required: [sampleId, x, y, subtype, cluster]
+      properties:
+        sampleId:
+          type: string
+        x:
+          type: number
+        y:
+          type: number
+        subtype:
+          type: string
+        cluster:
+          type: integer
+
+    SurvivalData:
+      type: object
+      required: [curves, medianSurvival]
+      properties:
+        curves:
+          type: array
+          items:
+            $ref: "#/components/schemas/SurvivalCurve"
+        medianSurvival:
+          type: array
+          items:
+            $ref: "#/components/schemas/MedianSurvival"
+
+    SurvivalCurve:
+      type: object
+      required: [subtype, color, points]
+      properties:
+        subtype:
+          type: string
+        color:
+          type: string
+        points:
+          type: array
+          items:
+            $ref: "#/components/schemas/SurvivalPoint"
+
+    SurvivalPoint:
+      type: object
+      required: [time, survival, atRisk]
+      properties:
+        time:
+          type: number
+        survival:
+          type: number
+        atRisk:
+          type: integer
+
+    MedianSurvival:
+      type: object
+      required: [subtype, months, lower95, upper95]
+      properties:
+        subtype:
+          type: string
+        months:
+          type: number
+        lower95:
+          type: number
+        upper95:
+          type: number
+
+    DrugSensitivity:
+      type: object
+      required: [drugName, cancerSubtype, sensitivityScore, resistanceScore, evidence, mechanism]
+      properties:
+        drugName:
+          type: string
+        cancerSubtype:
+          type: string
+        sensitivityScore:
+          type: number
+        resistanceScore:
+          type: number
+        evidence:
+          type: string
+          enum: [high, medium, low]
+        mechanism:
+          type: string
+        fdaApproved:
+          type: boolean
+        clinicalTrials:
+          type: ["integer", "null"]
+
+    DrugRecommendation:
+      type: object
+      required: [rank, drugName, targetGene, sensitivityScore, evidence, mechanism, sideEffects, combinationTherapy]
+      properties:
+        rank:
+          type: integer
+        drugName:
+          type: string
+        targetGene:
+          type: string
+        sensitivityScore:
+          type: number
+        evidence:
+          type: string
+        mechanism:
+          type: string
+        sideEffects:
+          type: array
+          items:
+            type: string
+        combinationTherapy:
+          type: array
+          items:
+            type: string
+        fdaApproved:
+          type: boolean
+        phase:
+          type: string
+
+    Gene:
+      type: object
+      required: [geneId, geneName, chromosome, description, cancerRelevance]
+      properties:
+        geneId:
+          type: string
+        geneName:
+          type: string
+        chromosome:
+          type: string
+        description:
+          type: string
+        cancerRelevance:
+          type: string
+          enum: [oncogene, tumor_suppressor, both, unknown]
+        expressionMean:
+          type: ["number", "null"]
+        mutationFrequency:
+          type: ["number", "null"]
+
+    GeneDetail:
+      type: object
+      required: [geneId, geneName, chromosome, description, cancerRelevance, function, pathways, relatedGenes, expressionProfile, mutationTypes]
+      properties:
+        geneId:
+          type: string
+        geneName:
+          type: string
+        chromosome:
+          type: string
+        description:
+          type: string
+        cancerRelevance:
+          type: string
+        function:
+          type: string
+        pathways:
+          type: array
+          items:
+            type: string
+        relatedGenes:
+          type: array
+          items:
+            type: string
+        expressionProfile:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpressionBySubtype"
+        mutationTypes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MutationType"
+
+    ExpressionBySubtype:
+      type: object
+      required: [subtype, meanExpression, stdDev]
+      properties:
+        subtype:
+          type: string
+        meanExpression:
+          type: number
+        stdDev:
+          type: number
+
+    MutationType:
+      type: object
+      required: [type, frequency]
+      properties:
+        type:
+          type: string
+        frequency:
+          type: number
+
+    PathwayResult:
+      type: object
+      required: [pathwayId, pathwayName, database, pValue, adjustedPValue, geneCount, geneRatio, genes]
+      properties:
+        pathwayId:
+          type: string
+        pathwayName:
+          type: string
+        database:
+          type: string
+        pValue:
+          type: number
+        adjustedPValue:
+          type: number
+        geneCount:
+          type: integer
+        geneRatio:
+          type: number
+        genes:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+
+    GoTerm:
+      type: object
+      required: [termId, termName, ontology, pValue, geneCount, genes]
+      properties:
+        termId:
+          type: string
+        termName:
+          type: string
+        ontology:
+          type: string
+          enum: [BP, MF, CC]
+        pValue:
+          type: number
+        geneCount:
+          type: integer
+        genes:
+          type: array
+          items:
+            type: string
+
+    PipelineStatus:
+      type: object
+      required: [stages, currentStage, overallProgress, lastRun]
+      properties:
+        stages:
+          type: array
+          items:
+            $ref: "#/components/schemas/PipelineStage"
+        currentStage:
+          type: integer
+        overallProgress:
+          type: number
+        lastRun:
+          type: string
+
+    PipelineStage:
+      type: object
+      required: [id, name, description, status, progress, durationMs, technologies]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [completed, running, pending, failed]
+        progress:
+          type: number
+        durationMs:
+          type: ["integer", "null"]
+        technologies:
+          type: array
+          items:
+            type: string
+        metrics:
+          type: ["string", "null"]
+
+    PipelineRun:
+      type: object
+      required: [id, startedAt, status, samplesProcessed, accuracy, durationMs]
+      properties:
+        id:
+          type: string
+        startedAt:
+          type: string
+        completedAt:
+          type: ["string", "null"]
+        status:
+          type: string
+        samplesProcessed:
+          type: integer
+        accuracy:
+          type: ["number", "null"]
+        durationMs:
+          type: ["integer", "null"]
+
+    Report:
+      type: object
+      required: [id, title, type, createdAt, status, sampleCount]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+          enum: [analysis, performance, survival, pathway, comprehensive]
+        createdAt:
+          type: string
+        status:
+          type: string
+          enum: [ready, generating, failed]
+        sampleCount:
+          type: integer
+        fileSizeKb:
+          type: ["number", "null"]
+
+    Notification:
+      type: object
+      required: [id, type, title, message, createdAt, read]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [success, warning, error, info]
+        title:
+          type: string
+        message:
+          type: string
+        createdAt:
+          type: string
+        read:
+          type: boolean
+
+    Dataset:
+      type: object
+      required: [id, name, source, samples, genes, cancerTypes, lastUpdated, status]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        source:
+          type: string
+        samples:
+          type: integer
+        genes:
+          type: integer
+        cancerTypes:
+          type: array
+          items:
+            type: string
+        lastUpdated:
+          type: string
+        status:
+          type: string
+          enum: [active, syncing, archived]
+        description:
+          type: string
+
+    ComparisonInput:
+      type: object
+      required: [analysisIds]
+      properties:
+        analysisIds:
+          type: array
+          items:
+            type: integer
+
+    ComparisonResult:
+      type: object
+      required: [analyses, sharedBiomarkers, uniqueBiomarkers, subtypeAgreement, biomarkerOverlap]
+      properties:
+        analyses:
+          type: array
+          items:
+            $ref: "#/components/schemas/Analysis"
+        sharedBiomarkers:
+          type: array
+          items:
+            type: string
+        uniqueBiomarkers:
+          type: array
+          items:
+            $ref: "#/components/schemas/UniqueBiomarkers"
+        subtypeAgreement:
+          type: boolean
+        biomarkerOverlap:
+          type: number
+
+    UniqueBiomarkers:
+      type: object
+      required: [analysisId, sampleId, biomarkers]
+      properties:
+        analysisId:
+          type: integer
+        sampleId:
+          type: string
+        biomarkers:
+          type: array
+          items:
+            type: string
+
+    PpiNetwork:
+      type: object
+      required: [nodes, edges]
+      properties:
+        nodes:
+          type: array
+          items:
+            $ref: "#/components/schemas/PpiNode"
+        edges:
+          type: array
+          items:
+            $ref: "#/components/schemas/PpiEdge"
+
+    PpiNode:
+      type: object
+      required: [id, label, cancerRelevance, degree]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        cancerRelevance:
+          type: string
+        degree:
+          type: integer
+        expressionLevel:
+          type: ["number", "null"]
+
+    PpiEdge:
+      type: object
+      required: [source, target, weight, interactionType]
+      properties:
+        source:
+          type: string
+        target:
+          type: string
+        weight:
+          type: number
+        interactionType:
+          type: string

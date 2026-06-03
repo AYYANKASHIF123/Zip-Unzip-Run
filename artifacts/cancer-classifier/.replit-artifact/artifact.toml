@@ -1,0 +1,31 @@
+kind = "data-app"
+previewPath = "/"
+title = "Gene Expression Cancer Classifier"
+version = "1.0.0"
+id = "artifacts/cancer-classifier"
+router = "path"
+
+[[integratedSkills]]
+name = "data-visualization"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22534
+
+[services.development]
+run = "pnpm --filter @workspace/cancer-classifier run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cancer-classifier", "run", "build" ]
+publicDir = "artifacts/cancer-classifier/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22534"
+BASE_PATH = "/"
