@@ -56,6 +56,7 @@ async function runMlPrediction(analysis: Record<string, unknown>): Promise<void>
     analysis.processingTimeMs = Date.now() - start;
     analysis.completedAt = new Date().toISOString();
     analysis.geneCount = pred.genesMatched;
+    analysis.subtypeProbabilities = pred.subtypeProbabilities; // store full probability map
     logger.info({ sampleId, subtype: pred.predictedSubtype, confidence: pred.confidenceScore }, "ML prediction completed");
   } catch (err) {
     logger.error({ err, sampleId }, "ML prediction failed");
@@ -197,12 +198,20 @@ router.get("/analyses/:id/results", async (req: Request, res: Response): Promise
     confidenceScore: analysis.confidenceScore,
     topBiomarkers,
     treatmentPathways: treatmentMap[analysis.cancerSubtype!] ?? [],
-    subtypeProbabilities: CANCER_SUBTYPES.map((s, i) => ({
-      subtype: s.name,
-      probability: i === 0 && s.name === analysis.cancerSubtype ? (analysis.confidenceScore ?? 0.9) :
-                   s.name === analysis.cancerSubtype ? (analysis.confidenceScore ?? 0.9) :
-                   +((1 - (analysis.confidenceScore ?? 0.9)) * [0.4, 0.25, 0.18, 0.1, 0.07][i] * 5).toFixed(3),
-    })),
+    subtypeProbabilities: (() => {
+      // Use real ML probabilities if stored; fall back to mock for legacy records
+      const stored = analysis.subtypeProbabilities as Record<string, number> | undefined;
+      if (stored) {
+        return Object.entries(stored).map(([subtype, probability]) => ({ subtype, probability }))
+          .sort((a, b) => b.probability - a.probability);
+      }
+      return CANCER_SUBTYPES.map((s, i) => ({
+        subtype: s.name,
+        probability: s.name === analysis.cancerSubtype
+          ? (analysis.confidenceScore ?? 0.9)
+          : +((1 - (analysis.confidenceScore ?? 0.9)) * [0.4, 0.25, 0.18, 0.1, 0.07][i] * 5).toFixed(3),
+      }));
+    })(),
     molecularSignature: sigMap[analysis.cancerSubtype!] ?? [],
     clinicalNotes: `Sample ${analysis.sampleId} classified as ${analysis.cancerSubtype} with high confidence (${((analysis.confidenceScore ?? 0) * 100).toFixed(1)}%). Stage ${analysis.stage ?? "unknown"} with ${analysis.tissueType ?? "unknown"} histology. Molecular profiling identifies key actionable targets. Treatment selection should be guided by tumor board review and patient clinical context.`,
   });
