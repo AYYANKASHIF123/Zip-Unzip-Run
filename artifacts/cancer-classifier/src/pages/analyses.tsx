@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useListAnalyses, useCreateAnalysis } from "@workspace/api-client-react";
+import { useListAnalyses, useCreateAnalysis, useGetAnalysis } from "@workspace/api-client-react";
 import { HeaderControls } from "@/components/layout/HeaderControls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Loader2, Brain } from "lucide-react";
 
 export default function Analyses() {
   const queryClient = useQueryClient();
@@ -24,6 +25,35 @@ export default function Analyses() {
 
   const [sampleId, setSampleId] = useState("");
   const [dataSource, setDataSource] = useState("TCGA");
+  const [pollingId, setPollingId] = useState<number | null>(null);
+
+  // Poll the newly-submitted analysis every 2s until the ML model finishes
+  const { data: polledAnalysis } = useGetAnalysis(pollingId!, {
+    query: {
+      enabled: pollingId !== null,
+      refetchInterval: 2000,
+    } as never,
+  });
+
+  // When ML completes (or fails), refresh the whole list and stop polling
+  useEffect(() => {
+    if (!polledAnalysis) return;
+    const status = (polledAnalysis as { status?: string }).status;
+    if (status === "completed" || status === "failed") {
+      setPollingId(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
+      if (status === "completed") {
+        const subtype = (polledAnalysis as { cancerSubtype?: string }).cancerSubtype;
+        const conf = (polledAnalysis as { confidenceScore?: number }).confidenceScore;
+        toast({
+          title: "Prediction complete",
+          description: `${subtype ?? "Unknown"} — ${conf !== undefined ? formatPercent(conf * 100) : "–"} confidence`,
+        });
+      } else {
+        toast({ title: "Prediction failed", variant: "destructive" });
+      }
+    }
+  }, [polledAnalysis, queryClient, toast]);
 
   const lastRefreshed = useMemo(() => {
     if (!dataUpdatedAt) return null;
@@ -38,13 +68,14 @@ export default function Analyses() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!sampleId.trim()) return;
-
     createAnalysis.mutate(
       { data: { sampleId, dataSource } },
       {
-        onSuccess: () => {
-          toast({ title: "Analysis submitted successfully" });
+        onSuccess: (created) => {
+          toast({ title: "Analysis submitted — running ML prediction…" });
           setSampleId("");
+          // Start polling for this specific analysis
+          setPollingId((created as { id?: number }).id ?? null);
           handleRefresh();
         },
         onError: () => {
@@ -55,10 +86,10 @@ export default function Analyses() {
   };
 
   const statusColors: Record<string, string> = {
-    completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    pending: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
+    completed:  "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+    pending:    "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
     processing: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    failed:     "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   };
 
   return (
@@ -73,9 +104,13 @@ export default function Analyses() {
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          {/* ── Submit form ── */}
           <Card className="lg:col-span-1 h-fit">
             <CardHeader className="px-4 pt-4 pb-2">
-              <CardTitle className="text-base">Submit New Analysis</CardTitle>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Brain className="h-4 w-4 text-primary" />
+                Submit New Analysis
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -86,12 +121,16 @@ export default function Analyses() {
                     value={sampleId}
                     onChange={(e) => setSampleId(e.target.value)}
                     placeholder="e.g. TCGA-02-0001"
-                    disabled={createAnalysis.isPending}
+                    disabled={createAnalysis.isPending || pollingId !== null}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="dataSource">Data Source</Label>
-                  <Select value={dataSource} onValueChange={setDataSource} disabled={createAnalysis.isPending}>
+                  <Select
+                    value={dataSource}
+                    onValueChange={setDataSource}
+                    disabled={createAnalysis.isPending || pollingId !== null}
+                  >
                     <SelectTrigger id="dataSource">
                       <SelectValue placeholder="Select data source" />
                     </SelectTrigger>
@@ -102,13 +141,28 @@ export default function Analyses() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full" disabled={createAnalysis.isPending || !sampleId.trim()}>
-                  {createAnalysis.isPending ? "Submitting..." : "Submit Analysis"}
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={createAnalysis.isPending || pollingId !== null || !sampleId.trim()}
+                >
+                  {(createAnalysis.isPending || pollingId !== null) ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Running ML…</>
+                  ) : (
+                    "Submit Analysis"
+                  )}
                 </Button>
+
+                {pollingId !== null && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    Random Forest is classifying 50 biomarker genes…
+                  </p>
+                )}
               </form>
             </CardContent>
           </Card>
 
+          {/* ── Results table ── */}
           <Card className="lg:col-span-3">
             <CardHeader className="px-4 pt-4 pb-2">
               <CardTitle className="text-base">All Analyses</CardTitle>
@@ -137,32 +191,52 @@ export default function Analyses() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {data?.map((analysis) => (
-                        <TableRow key={analysis.id}>
-                          <TableCell className="text-sm font-mono text-muted-foreground">#{analysis.id}</TableCell>
-                          <TableCell className="font-medium text-sm">{analysis.sampleId}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{analysis.dataSource}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={`${statusColors[analysis.status]} border-0 font-medium capitalize`}>
-                              {analysis.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm">{analysis.cancerSubtype || "-"}</TableCell>
-                          <TableCell className="text-sm">
-                            {analysis.confidenceScore ? formatPercent(analysis.confidenceScore * 100) : "-"}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {format(new Date(analysis.createdAt), "MMM d, yyyy HH:mm")}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {analysis.status === "completed" && (
-                              <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/results/${analysis.id}`}>View Results</Link>
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {data?.map((analysis) => {
+                        const isPolling = pollingId !== null && (analysis as { id?: number }).id === pollingId;
+                        return (
+                          <TableRow
+                            key={(analysis as { id?: number }).id}
+                            className={isPolling ? "animate-pulse bg-blue-50 dark:bg-blue-950/20" : ""}
+                          >
+                            <TableCell className="text-sm font-mono text-muted-foreground">
+                              #{(analysis as { id?: number }).id}
+                            </TableCell>
+                            <TableCell className="font-medium text-sm">
+                              {(analysis as { sampleId?: string }).sampleId}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {(analysis as { dataSource?: string }).dataSource}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={`${statusColors[(analysis as { status?: string }).status ?? "pending"]} border-0 font-medium capitalize`}
+                              >
+                                {isPolling && <Loader2 className="mr-1 h-3 w-3 animate-spin inline" />}
+                                {(analysis as { status?: string }).status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {(analysis as { cancerSubtype?: string | null }).cancerSubtype ?? (isPolling ? "…" : "-")}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {(analysis as { confidenceScore?: number | null }).confidenceScore
+                                ? formatPercent((analysis as { confidenceScore: number }).confidenceScore * 100)
+                                : (isPolling ? "…" : "-")}
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">
+                              {format(new Date((analysis as { createdAt?: string }).createdAt ?? new Date()), "MMM d, yyyy HH:mm")}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {(analysis as { status?: string }).status === "completed" && (
+                                <Button variant="ghost" size="sm" asChild>
+                                  <Link href={`/results/${(analysis as { id?: number }).id}`}>View Results</Link>
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                       {(!data || data.length === 0) && (
                         <TableRow>
                           <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">

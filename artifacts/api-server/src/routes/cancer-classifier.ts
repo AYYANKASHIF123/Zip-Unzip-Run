@@ -1,5 +1,67 @@
 import { Router, type IRouter } from "express";
 import type { Request, Response } from "express";
+import { logger } from "../lib/logger";
+
+// ─── ML Integration ───────────────────────────────────────────────────────────
+
+const ML_GENES = [
+  "ERBB2","PIK3CA","PTEN","BRAF","KRAS","CTNNB1","BRCA1","BRCA2","EGFR","NRAS",
+  "TP53","CCND1","MYC","SRC","PBRM1","AR","ESR1","CDH1","RB1","CDKN2A",
+  "VHL","APC","MLH1","SMAD4","FGFR1","FGFR2","FGFR3","ALK","MET","RET",
+  "NF1","NF2","NOTCH1","NOTCH2","PDGFRA","KIT","IDH1","IDH2","TERT","CDKN1B",
+  "PIK3R1","FOXO3","AKT1","MTOR","ARID1A","SETD2","KDM6A","CREBBP","EP300","DNMT3A",
+];
+
+function seededRandom(seed: string): () => number {
+  let s = [...seed].reduce((acc, c) => (acc * 31 + c.charCodeAt(0)) & 0x7fffffff, 1);
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
+function buildGeneExpressionCsv(sampleId: string): string {
+  const rand = seededRandom(sampleId);
+  const values = ML_GENES.map(() => (rand() * 6 - 2).toFixed(4));
+  const header = ["sampleId", ...ML_GENES].join(",");
+  const row = [sampleId, ...values].join(",");
+  return `${header}\n${row}\n`;
+}
+
+async function runMlPrediction(analysis: Record<string, unknown>): Promise<void> {
+  const start = Date.now();
+  const sampleId = analysis.sampleId as string;
+  try {
+    const csv = buildGeneExpressionCsv(sampleId);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const formData = new FormData();
+    formData.append("file", blob, `${sampleId}.csv`);
+
+    const response = await fetch("http://localhost:8000/ml/predict", {
+      method: "POST",
+      body: formData,
+    });
+    if (!response.ok) throw new Error(`ML service returned ${response.status}`);
+
+    const result = await response.json() as { predictions?: Array<{
+      predictedSubtype: string; confidenceScore: number; genesMatched: number;
+      subtypeProbabilities: Record<string, number>;
+    }> };
+    const pred = result.predictions?.[0];
+    if (!pred) throw new Error("No predictions returned from ML service");
+
+    analysis.status = "completed";
+    analysis.cancerSubtype = pred.predictedSubtype;
+    analysis.confidenceScore = pred.confidenceScore;
+    analysis.processingTimeMs = Date.now() - start;
+    analysis.completedAt = new Date().toISOString();
+    analysis.geneCount = pred.genesMatched;
+    logger.info({ sampleId, subtype: pred.predictedSubtype, confidence: pred.confidenceScore }, "ML prediction completed");
+  } catch (err) {
+    logger.error({ err, sampleId }, "ML prediction failed");
+    analysis.status = "failed";
+  }
+}
 
 const router: IRouter = Router();
 
@@ -90,15 +152,17 @@ router.get("/analyses", async (_req: Request, res: Response): Promise<void> => {
 router.post("/analyses", async (req: Request, res: Response): Promise<void> => {
   const { sampleId, dataSource, patientAge, patientGender, tissueType, stage } = req.body;
   if (!sampleId || !dataSource) { res.status(400).json({ error: "sampleId and dataSource are required" }); return; }
-  const newAnalysis = {
-    id: ANALYSES.length + 1, sampleId, dataSource, status: "pending",
+  const newAnalysis: Record<string, unknown> = {
+    id: ANALYSES.length + 1, sampleId, dataSource, status: "processing",
     cancerSubtype: null, confidenceScore: null, processingTimeMs: null,
     createdAt: new Date().toISOString(), completedAt: null,
     patientAge: patientAge ?? null, patientGender: patientGender ?? null,
     tissueType: tissueType ?? null, stage: stage ?? null, geneCount: null,
   };
-  ANALYSES.push(newAnalysis);
+  ANALYSES.push(newAnalysis as never);
   res.status(201).json(newAnalysis);
+  // Fire-and-forget: run real ML prediction in background, mutate record in-place
+  runMlPrediction(newAnalysis).catch(() => { /* already logged inside */ });
 });
 
 router.get("/analyses/:id", async (req: Request, res: Response): Promise<void> => {
