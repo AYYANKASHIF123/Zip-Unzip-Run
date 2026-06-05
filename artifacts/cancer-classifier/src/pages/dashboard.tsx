@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetDashboardSummary } from "@workspace/api-client-react";
+import { useGetDashboardSummary, useCreateAnalysis, useGetAnalysis } from "@workspace/api-client-react";
 import { HeaderControls } from "@/components/layout/HeaderControls";
 import { KPICard } from "@/components/ui/kpi-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +11,14 @@ import { formatPercent, formatCompact, CHART_COLOR_LIST, CustomTooltip, CustomLe
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CSVLink } from "react-csv";
-import { Download, AlertTriangle, CheckCircle, Activity, Cpu } from "lucide-react";
+import { Download, AlertTriangle, CheckCircle, Activity, Cpu, Zap, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const PLATFORM_STATS = [
   { label: "Total Analyses",     value: 12,      color: "text-primary"    },
@@ -53,6 +56,41 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { data, isLoading, isFetching, dataUpdatedAt } = useGetDashboardSummary();
   const loading = isLoading || isFetching;
+  const [, navigate] = useLocation();
+
+  // ── Quick Classify ────────────────────────────────────────────────────────
+  const [quickSampleId, setQuickSampleId] = useState("");
+  const [quickDataSource, setQuickDataSource] = useState("TCGA");
+  const [pollingId, setPollingId] = useState<number | null>(null);
+  const createAnalysis = useCreateAnalysis();
+
+  const { data: polledAnalysis } = useGetAnalysis(pollingId!, {
+    enabled: pollingId !== null,
+    refetchInterval: pollingId !== null ? 2000 : false,
+  });
+
+  useEffect(() => {
+    const status = (polledAnalysis as Record<string, unknown> | undefined)?.status;
+    if (status === "completed" && pollingId !== null) {
+      const id = pollingId;
+      setPollingId(null);
+      navigate(`/results/${id}`);
+    } else if (status === "failed") {
+      setPollingId(null);
+    }
+  }, [polledAnalysis, pollingId, navigate]);
+
+  const handleQuickClassify = async () => {
+    const sid = quickSampleId.trim();
+    if (!sid || createAnalysis.isPending || pollingId !== null) return;
+    try {
+      const result = await createAnalysis.mutateAsync({ data: { sampleId: sid, dataSource: quickDataSource } });
+      setPollingId((result as Record<string, unknown>).id as number);
+      setQuickSampleId("");
+    } catch { /* surface nothing */ }
+  };
+
+  const isClassifying = createAnalysis.isPending || pollingId !== null;
 
   const lastRefreshed = useMemo(() => {
     if (!dataUpdatedAt) return null;
@@ -105,6 +143,66 @@ export default function Dashboard() {
           <KPICard title="Model Accuracy"  value={data ? formatPercent(data.overallAccuracy * 100) : "0%"} loading={loading} />
           <KPICard title="Biomarkers Found" value={data ? formatCompact(data.totalBiomarkersFound) : 0} loading={loading} color="#795EFF" />
         </div>
+
+        {/* Quick Classify */}
+        <Card className="border-primary/20 bg-primary/[0.02]">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+              <div className="flex items-center gap-2 shrink-0 mb-1 sm:mb-0 sm:pb-0.5">
+                <Zap className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-sm">Quick Classify</span>
+              </div>
+
+              <div className="flex flex-1 flex-col sm:flex-row gap-2 sm:items-end">
+                <div className="flex-1 space-y-1">
+                  <Label htmlFor="qs-id" className="text-xs text-muted-foreground">Sample ID</Label>
+                  <Input
+                    id="qs-id"
+                    placeholder="e.g. TCGA-A7-A0CE"
+                    value={quickSampleId}
+                    onChange={e => setQuickSampleId(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleQuickClassify()}
+                    disabled={isClassifying}
+                    className="h-8 text-sm"
+                  />
+                </div>
+
+                <div className="w-full sm:w-[140px] space-y-1">
+                  <Label htmlFor="qs-src" className="text-xs text-muted-foreground">Data Source</Label>
+                  <Select value={quickDataSource} onValueChange={setQuickDataSource} disabled={isClassifying}>
+                    <SelectTrigger id="qs-src" className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {["TCGA", "GEO", "CCLE", "cBioPortal", "Custom"].map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button
+                  onClick={handleQuickClassify}
+                  disabled={!quickSampleId.trim() || isClassifying}
+                  size="sm"
+                  className="h-8 shrink-0 gap-1.5"
+                >
+                  {isClassifying ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Classifying…</>
+                  ) : (
+                    <><Zap className="w-3.5 h-3.5" /> Classify</>
+                  )}
+                </Button>
+              </div>
+
+              {isClassifying && (
+                <p className="text-xs text-muted-foreground sm:pb-0.5 shrink-0">
+                  Running ML prediction — redirecting when done…
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Platform stats */}
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2">

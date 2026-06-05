@@ -24,7 +24,7 @@ const PHASES: Phase[] = [
     title: "Final Year Project Prototype",
     subtitle: "Core classification pipeline with full UI",
     status: "complete",
-    eta: "Completed — May 2025",
+    eta: "Completed — May 2025",   // Phase 1 shipped
     color: "border-green-300 bg-green-50/50 dark:bg-green-900/5 dark:border-green-800",
     badge: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
     items: [
@@ -46,7 +46,7 @@ const PHASES: Phase[] = [
     title: "Research Platform",
     subtitle: "Explainable AI, biomarker discovery, multi-model support",
     status: "active",
-    eta: "In Progress — 2025",
+    eta: "In Progress — Jun 2026",
     color: "border-blue-300 bg-blue-50/50 dark:bg-blue-900/5 dark:border-blue-800",
     badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
     items: [
@@ -68,7 +68,7 @@ const PHASES: Phase[] = [
     title: "Startup MVP",
     subtitle: "Real authentication, cloud database, API access tier",
     status: "planned",
-    eta: "Target — Q3 2025",
+    eta: "Target — Q1 2027",
     color: "border-amber-300 bg-amber-50/50 dark:bg-amber-900/5 dark:border-amber-800",
     badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
     items: [
@@ -89,7 +89,7 @@ const PHASES: Phase[] = [
     title: "Advanced Product",
     subtitle: "Multi-omics, PPI networks, enterprise deployment",
     status: "future",
-    eta: "Target — 2026+",
+    eta: "Target — 2028+",
     color: "border-dashed border-gray-300 dark:border-gray-700",
     badge: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
     items: [
