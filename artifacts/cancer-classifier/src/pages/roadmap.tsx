@@ -24,7 +24,7 @@ const PHASES: Phase[] = [
     title: "Final Year Project Prototype",
     subtitle: "Core classification pipeline with full UI",
     status: "complete",
-    eta: "Completed — May 2025",   // Phase 1 shipped
+    eta: "Completed — Jan 2026",
     color: "border-green-300 bg-green-50/50 dark:bg-green-900/5 dark:border-green-800",
     badge: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
     items: [
@@ -58,8 +58,8 @@ const PHASES: Phase[] = [
       { label: "Biomarker ranking and export", done: true },
       { label: "Pathway analysis (KEGG + GO terms)", done: true },
       { label: "Gene library with mutation type data", done: true },
-      { label: "Model versioning system", done: false },
-      { label: "Real-time model training (server-side Python)", done: false },
+      { label: "Model versioning system", done: true },
+      { label: "Real-time model training (server-side Python)", done: true },
       { label: "Full SHAP integration via Python microservice", done: false },
     ],
   },

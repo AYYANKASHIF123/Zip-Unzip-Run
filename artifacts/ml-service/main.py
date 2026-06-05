@@ -2,8 +2,12 @@ import io
 import pandas as pd
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
-from model import load_or_train_model, predict, explain, FEATURE_GENES
+from model import (
+    load_or_train_model, predict, explain, train_new_version,
+    load_registry, FEATURE_GENES,
+)
 
 app = FastAPI(title="GeneClassifier ML Service", version="1.0.0")
 
@@ -44,6 +48,8 @@ async def _parse_csv(file: UploadFile) -> pd.DataFrame:
     return df
 
 
+# ── Health ─────────────────────────────────────────────────────────────────────
+
 @app.get("/ml/healthz")
 def health():
     return {
@@ -53,6 +59,8 @@ def health():
         "subtypes": ["BRCA", "LUAD", "COAD", "GBM", "PRAD"],
     }
 
+
+# ── Predict ────────────────────────────────────────────────────────────────────
 
 @app.post("/ml/predict")
 async def predict_endpoint(file: UploadFile = File(...)):
@@ -71,45 +79,30 @@ async def predict_endpoint(file: UploadFile = File(...)):
     }
 
 
+# ── Explainability ─────────────────────────────────────────────────────────────
+
 @app.get("/ml/features/importance")
 def feature_importance():
-    """
-    Returns global Random Forest feature importances (MDI) for all 50 genes,
-    plus per-class scaled means so the frontend can show which direction each
-    gene pushes each cancer subtype.
-    """
     bundle = _require_model()
-    importances   = bundle["feature_importances"]
+    importances     = bundle["feature_importances"]
     per_class_means = bundle["per_class_means"]
-    genes         = bundle["features"]
-
+    genes           = bundle["features"]
     ranked = sorted(
         [{"gene": g, "importance": round(imp, 6), "rank": 0}
          for g, imp in zip(genes, importances)],
-        key=lambda x: x["importance"],
-        reverse=True,
+        key=lambda x: x["importance"], reverse=True,
     )
     for i, item in enumerate(ranked):
         item["rank"] = i + 1
         item["perClassMean"] = {
-            subtype: per_class_means[subtype][item["gene"]]
-            for subtype in per_class_means
+            sub: per_class_means[sub][item["gene"]]
+            for sub in per_class_means
         }
-
-    return {
-        "genes":  ranked,
-        "method": "MDI (Mean Decrease in Impurity)",
-        "model":  "RandomForest v1.0",
-        "nTrees": 200,
-    }
+    return {"genes": ranked, "method": "MDI (Mean Decrease in Impurity)", "model": "RandomForest v1.0", "nTrees": 200}
 
 
 @app.post("/ml/explain")
 async def explain_endpoint(file: UploadFile = File(...)):
-    """
-    Per-sample SHAP-style feature attribution.
-    Contribution_i = importance_i × (scaled_value_i − class_mean_i)
-    """
     bundle = _require_model()
     df = await _parse_csv(file)
     try:
@@ -118,6 +111,41 @@ async def explain_endpoint(file: UploadFile = File(...)):
         raise HTTPException(500, f"Explanation failed: {exc}")
     return {"explanations": results, "model": "RandomForest v1.0", "method": "importance × (value − class_mean)"}
 
+
+# ── Model versioning ───────────────────────────────────────────────────────────
+
+@app.get("/ml/models")
+def list_models():
+    """Return all trained model versions from the registry."""
+    return load_registry()
+
+
+class TrainRequest(BaseModel):
+    n_estimators:      int = 200
+    max_depth:         int = 15
+    min_samples_split: int = 5
+    class_weight:      str = "balanced"
+
+
+@app.post("/ml/models/train")
+def train_model(body: TrainRequest):
+    """
+    Train a new Random Forest version with the supplied hyperparameters.
+    Runs 5-fold cross-validation for honest accuracy/F1 estimates.
+    Blocks until training is complete (typically 5-15 s).
+    """
+    global _model_bundle
+    try:
+        version, bundle = train_new_version(body.model_dump())
+        _model_bundle = bundle
+        return {"success": True, "version": version}
+    except RuntimeError as exc:
+        raise HTTPException(409, str(exc))
+    except Exception as exc:
+        raise HTTPException(500, f"Training failed: {exc}")
+
+
+# ── Features list ──────────────────────────────────────────────────────────────
 
 @app.get("/ml/features")
 def features():

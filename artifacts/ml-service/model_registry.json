@@ -1,0 +1,22 @@
+{
+  "versions": [
+    {
+      "id": "v1",
+      "name": "Random Forest v1",
+      "createdAt": "2026-06-05T09:41:32.303045+00:00",
+      "params": {
+        "n_estimators": 200,
+        "max_depth": 15,
+        "min_samples_split": 5,
+        "class_weight": "balanced"
+      },
+      "cvAccuracy": 0.924,
+      "cvF1": 0.921,
+      "nGenes": 50,
+      "nSubtypes": 5,
+      "isActive": true,
+      "filePath": "model_v1.pkl"
+    }
+  ],
+  "activeVersionId": "v1"
+}

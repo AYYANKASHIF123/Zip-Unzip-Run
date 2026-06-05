@@ -26,6 +26,7 @@ import ExplainableAI from "@/pages/xai";
 import ModelComparison from "@/pages/model-comparison";
 import Architecture from "@/pages/architecture";
 import Roadmap from "@/pages/roadmap";
+import ModelTraining from "@/pages/model-training";
 import Settings from "@/pages/settings";
 import AuditLogs from "@/pages/audit-logs";
 
@@ -64,6 +65,7 @@ function Router() {
         <Route path="/roadmap" component={Roadmap} />
         <Route path="/settings" component={Settings} />
         <Route path="/audit-logs" component={AuditLogs} />
+        <Route path="/model-training" component={ModelTraining} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

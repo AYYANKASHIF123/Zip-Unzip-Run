@@ -7,7 +7,7 @@ import {
   Microscope, HeartPulse, FlaskConical, BookOpen, GitBranch,
   Cpu, FileText, Bell, Database, GitCompare,
   Sparkles, BarChart3, Network, Map, Settings, ClipboardList,
-  Layers, Info, ShieldCheck,
+  Layers, Info, ShieldCheck, PlayCircle,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -46,8 +46,9 @@ const NAV_GROUPS = [
   {
     label: "AI & Models",
     items: [
-      { href: "/model-performance", label: "Model Performance", icon: Activity    },
+      { href: "/model-performance", label: "Model Performance", icon: Activity     },
       { href: "/model-comparison",  label: "Model Comparison",  icon: BarChart3   },
+      { href: "/model-training",    label: "Model Training",    icon: PlayCircle  },
       { href: "/xai",               label: "Explainable AI",    icon: Sparkles    },
       { href: "/pipeline",          label: "Pipeline Monitor",  icon: Cpu         },
     ],

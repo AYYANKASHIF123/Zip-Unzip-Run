@@ -591,6 +591,38 @@ router.get("/datasets", async (_req: Request, res: Response): Promise<void> => {
   ]);
 });
 
+// ─── Model versioning & training ──────────────────────────────────────────────
+
+router.get("/models/versions", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const r = await fetch("http://localhost:8000/ml/models");
+    if (!r.ok) throw new Error(`ML service ${r.status}`);
+    res.json(await r.json());
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch model versions");
+    res.status(503).json({ error: "ML service unavailable" });
+  }
+});
+
+router.post("/models/train", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const r = await fetch("http://localhost:8000/ml/models/train", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body ?? {}),
+    });
+    if (!r.ok) {
+      const data = await r.json() as Record<string, unknown>;
+      res.status(r.status).json({ error: data.detail ?? "Training failed" });
+      return;
+    }
+    res.json(await r.json());
+  } catch (err) {
+    req.log.error({ err }, "Model training request failed");
+    res.status(503).json({ error: "ML service unavailable" });
+  }
+});
+
 // ─── Explainable AI ───────────────────────────────────────────────────────────
 
 router.get("/xai/importance", async (req: Request, res: Response): Promise<void> => {
