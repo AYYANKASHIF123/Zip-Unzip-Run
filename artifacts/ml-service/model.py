@@ -45,27 +45,22 @@ def _generate_training_data(n_per_class: int = 400) -> tuple:
                 X[:, idx[g]] -= v + rng.randn(n) * 0.4
         return X
 
-    # BRCA – HER2+, luminal, TNBC sub-patterns
     brca = make(n_per_class,
                 over={"ERBB2": 3.5, "PIK3CA": 2.2, "CCND1": 2.6, "ESR1": 4.1, "FGFR1": 1.6, "SRC": 1.9, "MYC": 1.4},
                 under={"BRCA1": 3.1, "BRCA2": 2.6, "PTEN": 1.6, "CDH1": 2.1, "RB1": 0.8})
 
-    # LUAD – EGFR/KRAS/ALK driven
     luad = make(n_per_class,
                 over={"EGFR": 4.2, "KRAS": 2.9, "ALK": 2.1, "MET": 2.6, "FGFR2": 1.6, "NOTCH1": 1.2},
                 under={"TP53": 3.6, "CDKN2A": 2.1, "RB1": 1.9, "NF1": 1.6, "SMAD4": 1.0})
 
-    # COAD – WNT/RAS/MSI
     coad = make(n_per_class,
                 over={"CTNNB1": 3.1, "BRAF": 2.6, "KRAS": 3.6, "MYC": 3.1, "FGFR3": 1.6, "NOTCH2": 1.3},
                 under={"APC": 4.1, "MLH1": 2.6, "SMAD4": 2.1, "PTEN": 1.6, "RB1": 1.1, "ARID1A": 1.5})
 
-    # GBM – PTEN loss, EGFR amplification, IDH-wt
     gbm = make(n_per_class,
                over={"EGFR": 5.1, "NRAS": 2.1, "PDGFRA": 3.1, "TERT": 2.6, "MYC": 1.6, "KIT": 1.4},
                under={"PTEN": 4.6, "PBRM1": 2.6, "NF1": 2.1, "TP53": 2.1, "IDH1": 2.8, "IDH2": 2.5})
 
-    # PRAD – AR driven, PTEN loss
     prad = make(n_per_class,
                 over={"AR": 5.2, "MYC": 2.1, "AKT1": 1.6, "MTOR": 1.6, "DNMT3A": 1.1, "KDM6A": 0.9},
                 under={"PTEN": 3.6, "RB1": 1.6, "CDKN1B": 2.1, "NF1": 1.1, "FOXO3": 1.3})
@@ -92,7 +87,30 @@ def _train_and_save() -> dict:
         )),
     ])
     pipeline.fit(X, y)
-    bundle = {"pipeline": pipeline, "features": FEATURE_GENES}
+    clf = pipeline.named_steps["clf"]
+
+    # ── Global feature importance (MDI) ───────────────────────────────────────
+    feature_importances = clf.feature_importances_.tolist()
+
+    # ── Per-class means in scaled space ──────────────────────────────────────
+    # Used for explaining which direction each gene pushes each subtype
+    X_scaled = pipeline.named_steps["scaler"].transform(
+        pipeline.named_steps["imputer"].transform(X)
+    )
+    per_class_means: dict = {}
+    for class_idx, subtype_key in enumerate(CANCER_SUBTYPES):
+        mask = (y == class_idx)
+        per_class_means[SUBTYPE_LABELS[subtype_key]] = {
+            gene: round(float(X_scaled[mask, i].mean()), 4)
+            for i, gene in enumerate(FEATURE_GENES)
+        }
+
+    bundle = {
+        "pipeline": pipeline,
+        "features": FEATURE_GENES,
+        "feature_importances": feature_importances,
+        "per_class_means": per_class_means,
+    }
     with open(MODEL_PATH, "wb") as f:
         pickle.dump(bundle, f)
     print("Model trained and saved.")
@@ -102,7 +120,12 @@ def _train_and_save() -> dict:
 def load_or_train_model() -> dict:
     if os.path.exists(MODEL_PATH):
         with open(MODEL_PATH, "rb") as f:
-            return pickle.load(f)
+            bundle = pickle.load(f)
+        # Migrate older pickles that lack XAI fields
+        if "feature_importances" not in bundle or "per_class_means" not in bundle:
+            os.remove(MODEL_PATH)
+            return _train_and_save()
+        return bundle
     return _train_and_save()
 
 
@@ -134,13 +157,11 @@ def _extract_sample_ids(df: pd.DataFrame) -> tuple:
 
 
 def predict(bundle: dict, df: pd.DataFrame) -> list:
-    pipeline     = bundle["pipeline"]
+    pipeline      = bundle["pipeline"]
     feature_genes = bundle["features"]
 
     sample_ids, df = _extract_sample_ids(df)
 
-    # Auto-detect transposed layout (genes as rows, samples as columns)
-    # heuristic: more rows than columns AND first column values look like gene names
     if len(df.index) > len(df.columns) * 2 and len(df.columns) <= 20:
         df = df.T
         sample_ids = [str(c) for c in df.index]
@@ -155,9 +176,9 @@ def predict(bundle: dict, df: pd.DataFrame) -> list:
         pred_key   = CANCER_SUBTYPES[lbl]
         confidence = float(probs[lbl])
         results.append({
-            "sampleId":            sid,
-            "predictedSubtype":    SUBTYPE_LABELS[pred_key],
-            "confidenceScore":     round(confidence, 4),
+            "sampleId":             sid,
+            "predictedSubtype":     SUBTYPE_LABELS[pred_key],
+            "confidenceScore":      round(confidence, 4),
             "subtypeProbabilities": {
                 SUBTYPE_LABELS[CANCER_SUBTYPES[j]]: round(float(p), 4)
                 for j, p in enumerate(probs)
@@ -165,5 +186,74 @@ def predict(bundle: dict, df: pd.DataFrame) -> list:
             "genesMatched":  len(available),
             "genesMissing":  len(missing),
             "missingGenes":  missing[:10],
+        })
+    return results
+
+
+def explain(bundle: dict, df: pd.DataFrame) -> list:
+    """
+    Per-sample SHAP-style explanation.
+    Contribution_i = importance_i × (scaled_value_i − class_mean_i)
+    Positive = gene pushes toward the predicted subtype.
+    Negative = gene pushes against it.
+    """
+    pipeline       = bundle["pipeline"]
+    feature_genes  = bundle["features"]
+    importances    = np.array(bundle["feature_importances"])
+    per_class_means = bundle["per_class_means"]
+
+    sample_ids, df = _extract_sample_ids(df)
+
+    if len(df.index) > len(df.columns) * 2 and len(df.columns) <= 20:
+        df = df.T
+        sample_ids = [str(c) for c in df.index]
+        df = df.reset_index(drop=True)
+
+    X, available, missing = _align_features(df, feature_genes)
+
+    # Scale the features (same pipeline steps as predict)
+    imputer = pipeline.named_steps["imputer"]
+    scaler  = pipeline.named_steps["scaler"]
+    X_imputed = imputer.transform(X)
+    X_scaled  = scaler.transform(X_imputed)
+
+    proba  = pipeline.predict_proba(X)
+    labels = pipeline.predict(X)
+
+    results = []
+    for i, (sid, probs, lbl) in enumerate(zip(sample_ids, proba, labels)):
+        pred_key   = CANCER_SUBTYPES[lbl]
+        pred_label = SUBTYPE_LABELS[pred_key]
+        confidence = float(probs[lbl])
+
+        class_means = per_class_means.get(pred_label, {})
+        class_mean_vec = np.array([class_means.get(g, 0.0) for g in feature_genes])
+
+        # contribution = importance × (sample_scaled − class_mean_scaled)
+        delta       = X_scaled[i] - class_mean_vec
+        raw_contribs = importances * delta
+
+        # Normalise so bars are interpretable (keep relative magnitudes)
+        abs_sum = np.abs(raw_contribs).sum() or 1.0
+        normalised = raw_contribs / abs_sum
+
+        contributions = []
+        for j, gene in enumerate(feature_genes):
+            contributions.append({
+                "gene":        gene,
+                "importance":  round(float(importances[j]), 6),
+                "scaledValue": round(float(X_scaled[i, j]), 4),
+                "classMean":   round(float(class_mean_vec[j]), 4),
+                "contribution": round(float(normalised[j]), 6),
+                "direction":   "pos" if normalised[j] >= 0 else "neg",
+            })
+
+        contributions.sort(key=lambda x: abs(x["contribution"]), reverse=True)
+
+        results.append({
+            "sampleId":         sid,
+            "predictedSubtype": pred_label,
+            "confidenceScore":  round(confidence, 4),
+            "contributions":    contributions,
         })
     return results

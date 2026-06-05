@@ -591,6 +591,46 @@ router.get("/datasets", async (_req: Request, res: Response): Promise<void> => {
   ]);
 });
 
+// ─── Explainable AI ───────────────────────────────────────────────────────────
+
+router.get("/xai/importance", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const r = await fetch("http://localhost:8000/ml/features/importance");
+    if (!r.ok) throw new Error(`ML service ${r.status}`);
+    res.json(await r.json());
+  } catch (err) {
+    req.log.error({ err }, "XAI importance fetch failed");
+    res.status(503).json({ error: "ML service unavailable" });
+  }
+});
+
+router.get("/xai/explain/:analysisId", async (req: Request, res: Response): Promise<void> => {
+  const id = parseInt(Array.isArray(req.params.analysisId) ? req.params.analysisId[0] : req.params.analysisId, 10);
+  const analysis = ANALYSES.find(a => a.id === id);
+  if (!analysis || (analysis as Record<string, unknown>).status !== "completed") {
+    res.status(404).json({ error: "Analysis not found or not completed" });
+    return;
+  }
+  try {
+    const csv = buildGeneExpressionCsv((analysis as Record<string, unknown>).sampleId as string);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const formData = new FormData();
+    formData.append("file", blob, `${(analysis as Record<string, unknown>).sampleId}.csv`);
+    const r = await fetch("http://localhost:8000/ml/explain", { method: "POST", body: formData });
+    if (!r.ok) throw new Error(`ML service ${r.status}`);
+    const data = await r.json() as { explanations?: unknown[] };
+    const explanation = data.explanations?.[0] ?? {};
+    res.json({
+      ...(explanation as object),
+      analysisId: id,
+      dataSource: (analysis as Record<string, unknown>).dataSource,
+    });
+  } catch (err) {
+    req.log.error({ err }, "XAI explain failed");
+    res.status(503).json({ error: "ML service unavailable" });
+  }
+});
+
 // ─── Comparison ───────────────────────────────────────────────────────────────
 
 router.post("/comparison/samples", async (req: Request, res: Response): Promise<void> => {
