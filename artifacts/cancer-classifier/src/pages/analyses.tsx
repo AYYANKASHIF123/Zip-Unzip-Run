@@ -13,8 +13,85 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Brain } from "lucide-react";
+import { Loader2, Brain, Download, FileSpreadsheet } from "lucide-react";
+
+// ── Sample data generator ─────────────────────────────────────────────────────
+
+const GENES_50 = [
+  "ERBB2","PIK3CA","PTEN",  "BRAF",  "KRAS",  "CTNNB1","BRCA1", "BRCA2",
+  "EGFR", "NRAS",  "TP53",  "CCND1", "MYC",   "SRC",   "PBRM1", "AR",
+  "ESR1", "CDH1",  "RB1",   "CDKN2A","VHL",   "APC",   "MLH1",  "SMAD4",
+  "FGFR1","FGFR2", "FGFR3", "ALK",   "MET",   "RET",   "NF1",   "NF2",
+  "NOTCH1","NOTCH2","PDGFRA","KIT",   "IDH1",  "IDH2",  "TERT",  "CDKN1B",
+  "PIK3R1","FOXO3", "AKT1",  "MTOR",  "ARID1A","SETD2", "KDM6A", "CREBBP",
+  "EP300","DNMT3A",
+] as const;
+
+type GeneMap = Partial<Record<typeof GENES_50[number], number>>;
+
+const SUBTYPE_PROFILES: Record<string, GeneMap> = {
+  BRCA: {
+    ERBB2:7.2, PIK3CA:5.8, CCND1:6.4, ESR1:7.8, SRC:5.6, MYC:5.2, FGFR1:5.0,
+    BRCA1:1.2, BRCA2:1.4, PTEN:2.1, CDH1:1.6, RB1:2.8,
+  },
+  LUAD: {
+    EGFR:7.8, KRAS:6.4, ALK:5.8, MET:6.2, FGFR2:5.0, NOTCH1:4.8,
+    TP53:1.2, CDKN2A:1.8, RB1:1.6, NF1:1.4, SMAD4:2.2,
+  },
+  COAD: {
+    CTNNB1:6.8, BRAF:6.2, KRAS:7.1, MYC:6.8, FGFR3:5.2, NOTCH2:5.0,
+    APC:0.8, MLH1:1.4, SMAD4:1.6, PTEN:1.9, ARID1A:1.5,
+  },
+  GBM: {
+    EGFR:8.4, PDGFRA:6.8, TERT:6.2, MYC:5.8, NRAS:5.2, KIT:5.0,
+    PTEN:0.6, NF1:1.6, TP53:1.8, IDH1:0.9, IDH2:1.1,
+  },
+  PRAD: {
+    AR:8.6, MYC:5.8, AKT1:5.2, MTOR:5.0, DNMT3A:4.8, KDM6A:4.6,
+    PTEN:1.2, RB1:1.8, CDKN1B:1.6, NF1:2.1, FOXO3:1.8,
+  },
+};
+
+function lcg(seed: number) {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+    return s / 0x100000000;
+  };
+}
+
+function generateSampleCSV(): string {
+  const subtypes = ["BRCA","LUAD","COAD","GBM","PRAD"] as const;
+  const rows: string[] = [["sample_id","expected_subtype",...GENES_50].join(",")];
+  subtypes.forEach((subtype, si) => {
+    for (let j = 0; j < 3; j++) {
+      const rng   = lcg(si * 997 + j * 31 + 42);
+      const profile = SUBTYPE_PROFILES[subtype];
+      const vals  = GENES_50.map(g => {
+        const base  = profile[g] ?? 3.2;
+        const noise = (rng() - 0.5) * 0.8;
+        return Math.max(0, base + noise).toFixed(3);
+      });
+      rows.push([`${subtype}-DEMO-${String(j+1).padStart(3,"0")}`, subtype, ...vals].join(","));
+    }
+  });
+  return rows.join("\n");
+}
+
+function downloadCSV() {
+  const csv  = generateSampleCSV();
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement("a"), {
+    href: url, download: "gene_expression_sample_data.csv",
+  });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 
 export default function Analyses() {
   const queryClient = useQueryClient();
@@ -159,6 +236,30 @@ export default function Analyses() {
                   </p>
                 )}
               </form>
+
+              <Separator className="my-4" />
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sample Data</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  No real data? Download a ready-to-use CSV with <strong>15 samples</strong> (3 per cancer type) using biologically realistic gene expression patterns.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 text-xs"
+                  onClick={downloadCSV}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download Sample CSV
+                </Button>
+                <p className="text-[10px] text-muted-foreground text-center">
+                  52 columns · 15 rows · all 5 cancer subtypes
+                </p>
+              </div>
             </CardContent>
           </Card>
 
