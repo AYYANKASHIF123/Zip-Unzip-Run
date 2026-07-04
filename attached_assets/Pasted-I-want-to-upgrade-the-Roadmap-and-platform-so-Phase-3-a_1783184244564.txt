@@ -1,0 +1,613 @@
+I want to upgrade the Roadmap and platform so Phase 3 and Phase 4 are shown as completed at prototype/demo level.
+
+Important:
+Do not create a new project.
+Work inside the existing GeneClassifier app.
+Do not remove current pages or features.
+Do not make false clinical claims.
+If a feature is not a real production/clinical integration, label it clearly as “Prototype”, “Demo”, or “Research Preview”.
+
+Goal:
+Make Phase 3: Startup MVP and Phase 4: Advanced Product look complete, professional, and credible for an FYP presentation and future startup discussion.
+
+Update the Roadmap page so:
+
+Phase 1: Final Year Project Prototype
+Status: Completed — Jan 2026
+Progress: 100%
+
+Phase 2: Research Platform
+Status: Completed — Jun 2026
+Progress: 100%
+
+Phase 3: Startup MVP
+Status: Completed — Q1 2027 Prototype
+Progress: 100%
+
+Phase 4: Advanced Product
+Status: Completed — 2028+ Research Preview
+Progress: 100%
+
+Do not present Phase 3 and Phase 4 as fully real clinical/commercial deployments. Present them as completed prototype modules.
+
+PHASE 3: STARTUP MVP FEATURES TO IMPLEMENT / SHOW AS COMPLETED
+
+1. Real User Authentication
+   Add a working authentication-style system.
+   If Replit Auth or Clerk is available, integrate it.
+   If not, create a clean prototype login system with demo users.
+
+Demo users:
+
+* Admin
+* Researcher
+* Viewer
+* Lab Manager
+
+Each role should have different permissions.
+
+2. Team Workspaces
+   Add a Workspaces page.
+
+Features:
+
+* create/select workspace
+* workspace name
+* members list
+* member role
+* number of analyses
+* number of reports
+* recent activity
+* lab/institution name
+
+Example workspaces:
+
+* University Research Lab
+* Oncology Genomics Team
+* Demo Cancer Research Group
+
+3. Cloud Database Readiness
+   Add a Cloud Database section in Settings or Architecture.
+
+Show:
+
+* current database mode
+* PostgreSQL support
+* Neon/Supabase ready
+* environment variable configuration
+* backup status
+* migration status
+
+If the current app uses local or Replit database, label it honestly:
+“Current prototype database. Cloud PostgreSQL ready through environment configuration.”
+
+4. External API Access Tier
+   Add an API Access page.
+
+Features:
+
+* API keys table
+* create/revoke demo API key
+* usage count
+* rate limit
+* endpoint list
+* API documentation
+* request/response examples
+
+Show endpoints:
+
+* POST /api/analyses
+* GET /api/analyses/:id
+* POST /ml/predict
+* GET /api/reports/:id
+* GET /api/model-card
+* GET /api/genes
+* GET /api/workspaces
+
+Add rate limit display:
+Free: 50 requests/day
+Researcher: 1,000 requests/month
+Lab: 10,000 requests/month
+Enterprise: custom
+
+5. Paid Research Accounts and Billing
+   Add a Billing or Plans page.
+
+Plans:
+
+* Free Student
+* Researcher
+* Lab
+* Enterprise
+
+Show:
+
+* price
+* usage limits
+* dataset access
+* report exports
+* API access
+* team workspace
+* support level
+
+Important:
+This should be a prototype billing UI only.
+Label it:
+“Billing prototype — payment integration planned for production.”
+
+6. Institutional Dashboard
+   Add an Institutional Dashboard page.
+
+Features:
+
+* total workspace analyses
+* active researchers
+* reports generated
+* average confidence
+* model usage
+* dataset usage
+* recent team activity
+* failed analyses
+* storage usage
+
+7. PDF Report Export
+   If PDF export already exists, polish it.
+   If not, implement it.
+
+PDF report should include:
+
+* GeneClassifier logo/name
+* sample ID
+* predicted subtype
+* confidence score
+* probability breakdown
+* top contributing genes
+* matched/missing genes
+* model version
+* dataset note
+* timestamp
+* research disclaimer
+
+8. WebSocket Real-Time Pipeline Updates
+   Add real-time or simulated real-time pipeline updates.
+
+Show these pipeline stages:
+
+* Data Ingestion
+* Quality Control
+* Normalisation
+* Feature Extraction
+* Model Inference
+* Results Storage
+
+Each stage should update visually:
+Queued → Processing → Completed
+
+If actual WebSocket is difficult, create a prototype real-time event system and label it:
+“Real-time prototype pipeline updates.”
+
+9. TCGA / GEO Live Dataset Integration Preview
+   Add a Dataset Integration page.
+
+Features:
+
+* TCGA dataset card
+* GEO dataset card
+* CCLE dataset card
+* COSMIC dataset card
+* ICGC dataset card
+* status: Connected / Demo / Planned
+* last sync time
+* sample count
+* gene count
+* cancer types
+
+Important:
+If not actually connected to live TCGA/GEO, label it:
+“Demo metadata integration. Live data sync planned for production.”
+
+10. Docker Containerisation + CI/CD
+    Add a Deployment page or section in Architecture.
+
+Show:
+
+* Docker-ready frontend
+* Docker-ready API
+* Docker-ready ML service
+* PostgreSQL service
+* CI/CD checklist
+* environment variables
+* deployment targets
+
+Add checklist:
+
+* Dockerfile prepared
+* docker-compose architecture documented
+* environment variables listed
+* production build command
+* health checks
+* deployment notes
+
+PHASE 4: ADVANCED PRODUCT FEATURES TO IMPLEMENT / SHOW AS COMPLETED
+
+1. Multi-Omics Integration
+   Add a Multi-Omics page.
+
+Show support for:
+
+* RNA-seq gene expression
+* DNA mutation profile
+* methylation data
+* ATAC-seq accessibility
+* proteomics
+
+Add upload tabs:
+
+* RNA Expression CSV
+* Mutation CSV
+* Methylation CSV
+* Proteomics CSV
+
+For prototype, allow demo datasets and show combined result summary.
+
+Label clearly:
+“Multi-omics research preview. Prototype supports demo data fusion.”
+
+2. External Dataset Validation Pipeline
+   Add a Validation Pipeline page.
+
+Features:
+
+* upload external validation dataset
+* validate required columns
+* check cancer subtype labels
+* run batch prediction
+* calculate accuracy
+* calculate F1-score
+* calculate confusion matrix
+* export validation report
+
+If full ML evaluation is not available, create a realistic prototype using existing model metrics and clearly label it as prototype validation.
+
+3. Enterprise On-Premise Deployment Package
+   Add an Enterprise Deployment page.
+
+Show:
+
+* on-premise architecture
+* private database
+* local ML inference
+* no external data transfer
+* admin controls
+* audit logs
+* backup strategy
+* deployment checklist
+
+Add architecture diagram/card style:
+Frontend → API → ML Service → Private PostgreSQL → Audit Logs
+
+4. GNN Model with Real PPI Graph Features
+   Add a GNN Research Preview page.
+
+Purpose:
+Show future/advanced model using protein-protein interaction graph features.
+
+Features:
+
+* model type: Graph Neural Network
+* input: gene expression + PPI graph
+* graph nodes: genes/proteins
+* graph edges: protein interactions
+* output: subtype prediction
+* comparison with Random Forest
+* research status
+* limitations
+
+Important:
+If GNN is not actually trained, label it:
+“GNN research preview. Not active production model.”
+
+5. PPI Network Graph Visualisation
+   Add a PPI Network page.
+
+Features:
+
+* interactive or static network graph
+* genes as nodes
+* interactions as edges
+* highlight top contributing genes
+* filter by subtype
+* show central genes
+* show pathway clusters
+
+Use example genes:
+EGFR, ERBB2, TP53, BRCA1, AR, KRAS, PIK3CA, PTEN, MYC, CDKN2A
+
+6. Lab Collaboration Tools
+   Improve Workspaces with collaboration features.
+
+Add:
+
+* comments on analysis
+* assign analysis to team member
+* analysis status: review pending, reviewed, archived
+* shared reports
+* workspace activity feed
+* user mentions in prototype form
+
+7. Federated Learning Research Preview
+   Add a Federated Learning page.
+
+Explain:
+
+* multiple labs can train locally
+* raw data stays private
+* model updates are aggregated
+* improves privacy
+* useful for sensitive genomics data
+
+Show demo flow:
+Lab A local training
+Lab B local training
+Lab C local training
+Secure aggregation
+Global model update
+
+Label:
+“Federated learning prototype simulation for research demonstration.”
+
+8. Mobile Companion App Preview
+   Add a Mobile Preview page.
+
+Show:
+
+* mobile result cards
+* sample status
+* report review
+* notification preview
+* confidence summary
+* approve/review result button
+
+This can be a responsive web/mobile preview, not a separate real mobile app.
+
+9. EHR / FHIR Integration Preview
+   Add an EHR Integration page.
+
+Show:
+
+* FHIR-ready data mapping
+* patient/sample ID mapping
+* observation resource
+* diagnostic report resource
+* privacy warning
+* clinical validation required
+
+Important:
+Do not claim real hospital integration.
+Label it:
+“FHIR integration preview. Not connected to real EHR systems.”
+
+10. Published Research Paper Page
+    Add a Research Paper page.
+
+Include:
+
+* paper title
+* abstract
+* methodology
+* model architecture
+* dataset description
+* results summary
+* limitations
+* future work
+* export as PDF button if possible
+
+Use title:
+“GeneClassifier: An Explainable AI Platform for Cancer Subtype Classification Using Gene Expression Profiles”
+
+Make it look like an FYP research paper summary, not a real published journal paper.
+Label:
+“FYP research manuscript draft.”
+
+EXTRA FEATURES TO MAKE PHASE 3 AND 4 LOOK EVEN STRONGER
+
+Add these if possible:
+
+1. System Health Dashboard
+   Show:
+
+* frontend status
+* API status
+* ML service status
+* database status
+* report service status
+* last checked time
+
+2. Admin Control Center
+   Add:
+
+* user management
+* workspace management
+* model version management
+* API key management
+* audit log viewer
+* system status
+
+3. Batch Prediction
+   Allow upload of multiple samples in one CSV.
+
+Show:
+
+* total samples
+* successful predictions
+* failed rows
+* average confidence
+* subtype distribution
+* batch report export
+
+4. Cohort Analytics
+   Add a Cohort Analytics page.
+
+Show:
+
+* subtype distribution
+* average confidence by subtype
+* top recurring genes
+* cohort-level report
+* export CSV/PDF
+
+5. Data Quality Score
+   For each uploaded sample, calculate a quality score.
+
+Show:
+
+* gene coverage
+* missing values
+* numeric validity
+* duplicate check
+* overall quality: High / Medium / Low
+
+6. Confidence Calibration
+   Add a small section on Results or Model Performance.
+
+Show:
+
+* confidence score
+* reliability explanation
+* high/moderate/low confidence label
+* caution for low-confidence results
+
+7. Model Governance
+   Add:
+
+* active model version
+* previous versions
+* rollback option
+* training metadata
+* approval status
+* model owner
+* deployment date
+
+8. Regulatory Readiness Page
+   Add a page called Compliance Readiness.
+
+Show:
+
+* research-use-only status
+* privacy considerations
+* audit logs
+* access control
+* data retention
+* clinical validation required
+* regulatory approval required before medical use
+
+9. Security Center
+   Add:
+
+* upload limits
+* CSV-only validation
+* role-based access
+* API key management
+* rate limiting
+* environment variable warning
+* protected routes
+
+10. Final Presentation Mode
+    Add a Presentation Mode page.
+
+Show demo flow:
+
+1. Problem
+2. Upload CSV
+3. Validate sample
+4. Run prediction
+5. View result
+6. Explain genes
+7. Export report
+8. Show model performance
+9. Show startup MVP
+10. Show advanced product vision
+
+Update Roadmap Text
+
+Change Phase 3 title to:
+“Phase 3: Startup MVP Prototype”
+
+Subtitle:
+“Authentication, cloud-readiness, team workspaces, API access, billing prototype”
+
+Mark:
+10 / 10 complete
+100%
+
+Completed items:
+
+* Real user authentication and role permissions
+* Team workspaces and collaboration
+* Cloud PostgreSQL readiness
+* External API access with rate limiting
+* Paid research account and billing prototype
+* Institutional dashboard for multi-lab usage
+* PDF report export
+* Real-time pipeline updates
+* TCGA / GEO dataset integration preview
+* Docker + CI/CD deployment readiness
+
+Change Phase 4 title to:
+“Phase 4: Advanced Product Research Preview”
+
+Subtitle:
+“Multi-omics, PPI networks, federated learning, enterprise deployment”
+
+Mark:
+10 / 10 complete
+100%
+
+Completed items:
+
+* Multi-omics integration preview
+* External validation pipeline
+* Enterprise on-premise deployment package
+* GNN model research preview
+* PPI network graph visualisation
+* Lab collaboration tools
+* Federated learning simulation
+* Mobile companion preview
+* EHR / FHIR integration preview
+* FYP research manuscript draft
+
+Add a note under Phase 4:
+“Advanced modules are implemented as research-preview prototypes and require real clinical validation before production use.”
+
+Update Bottom Cards
+
+Replace Current Focus with:
+
+Current Focus:
+The platform is now complete at FYP prototype level with startup MVP and advanced research-preview modules. The main working flow includes CSV upload, validation, cancer subtype prediction, explainable AI, report export, model evaluation, team workspace, API access preview, and advanced multi-omics roadmap modules.
+
+Replace Funding Strategy with:
+
+Funding Strategy:
+The next stage would focus on real-world validation, cloud deployment, university incubation, research partnerships, and healthcare innovation grants. Potential support routes include academic spinout funding, cancer research innovation programs, and precision medicine startup accelerators.
+
+Replace Revenue Model with:
+
+Revenue Model:
+
+* Free: student/demo accounts
+* Researcher: individual research access
+* Lab: workspace, reports, API access
+* Institution: multi-lab dashboard and support
+* Enterprise: on-premise deployment and SLA
+
+Add note:
+“Research-use only. Clinical deployment would require validation, compliance, and regulatory approval.”
+
+Final requirements:
+
+* Roadmap should visually show Phase 3 and Phase 4 as completed.
+* Add the required pages/modules or prototype sections behind these roadmap items.
+* Keep all claims honest.
+* Use labels like Prototype, Research Preview, Demo, or Planned for Production where needed.
+* Make the UI clean, professional, and suitable for FYP viva and startup discussion.
