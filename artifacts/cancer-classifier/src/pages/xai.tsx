@@ -73,14 +73,14 @@ export default function ExplainableAI() {
   // ── All completed analyses for the dropdown ───────────────────────────────
   const { data: allAnalyses } = useListAnalyses();
   const completedAnalyses = useMemo(
-    () => (allAnalyses ?? []).filter(a => (a as Record<string, unknown>).status === "completed"),
+    () => (allAnalyses ?? []).filter(a => (a as unknown as Record<string, unknown>).status === "completed"),
     [allAnalyses]
   );
 
   // Set default selection once analyses load
   useMemo(() => {
     if (!selectedId && completedAnalyses.length > 0) {
-      setSelectedId(String((completedAnalyses[0] as Record<string, unknown>).id));
+      setSelectedId(String((completedAnalyses[0] as unknown as Record<string, unknown>).id));
     }
   }, [completedAnalyses, selectedId]);
 
@@ -98,8 +98,8 @@ export default function ExplainableAI() {
   const genes = importanceQuery.data?.genes ?? [];
   const explanation = explainQuery.data;
   const selectedAnalysis = completedAnalyses.find(
-    a => String((a as Record<string, unknown>).id) === selectedId
-  ) as Record<string, unknown> | undefined;
+    a => String((a as unknown as Record<string, unknown>).id) === selectedId
+  ) as unknown as Record<string, unknown> | undefined;
 
   // Top-15 for global chart
   const globalChartData = genes.slice(0, 15).map(g => {
@@ -319,7 +319,7 @@ export default function ExplainableAI() {
                 </SelectTrigger>
                 <SelectContent>
                   {completedAnalyses.map(a => {
-                    const ar = a as Record<string, unknown>;
+                    const ar = a as unknown as Record<string, unknown>;
                     return (
                       <SelectItem key={String(ar.id)} value={String(ar.id)}>
                         {ar.sampleId as string} — {ar.cancerSubtype as string}

@@ -65,9 +65,11 @@ export default function Dashboard() {
   const createAnalysis = useCreateAnalysis();
 
   const { data: polledAnalysis } = useGetAnalysis(pollingId!, {
-    enabled: pollingId !== null,
-    refetchInterval: pollingId !== null ? 2000 : false,
-  });
+    query: {
+      enabled: pollingId !== null,
+      refetchInterval: pollingId !== null ? 2000 : false,
+    },
+  } as never);
 
   useEffect(() => {
     const status = (polledAnalysis as Record<string, unknown> | undefined)?.status;
@@ -85,7 +87,7 @@ export default function Dashboard() {
     if (!sid || createAnalysis.isPending || pollingId !== null) return;
     try {
       const result = await createAnalysis.mutateAsync({ data: { sampleId: sid, dataSource: quickDataSource } });
-      setPollingId((result as Record<string, unknown>).id as number);
+      setPollingId((result as unknown as Record<string, unknown>).id as number);
       setQuickSampleId("");
     } catch { /* surface nothing */ }
   };

@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Biomarker } from './biomarker';
+import type { ClassificationResultContribution } from './classificationResultContribution';
+import type { ClassificationResultDataQualityStatus } from './classificationResultDataQualityStatus';
 import type { SubtypeProbability } from './subtypeProbability';
 
 export interface ClassificationResult {
@@ -17,4 +19,14 @@ export interface ClassificationResult {
   subtypeProbabilities: SubtypeProbability[];
   molecularSignature: string[];
   clinicalNotes: string;
+  /** Count of the 50 model input genes not present in the uploaded/source data. */
+  genesMissing?: number;
+  missingGenesList?: string[];
+  imputationMethod?: string;
+  dataQualityStatus?: ClassificationResultDataQualityStatus;
+  modelVersion?: string;
+  /** @nullable */
+  apiRequestId?: string | null;
+  /** Per-sample explainability payload from the ML service (SHAP-inspired feature contributions). */
+  contribution?: ClassificationResultContribution;
 }

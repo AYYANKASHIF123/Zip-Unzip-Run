@@ -29,6 +29,8 @@ import Roadmap from "@/pages/roadmap";
 import ModelTraining from "@/pages/model-training";
 import Settings from "@/pages/settings";
 import AuditLogs from "@/pages/audit-logs";
+import ModelCard from "@/pages/model-card";
+import StartupVision from "@/pages/startup-vision";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +68,8 @@ function Router() {
         <Route path="/settings" component={Settings} />
         <Route path="/audit-logs" component={AuditLogs} />
         <Route path="/model-training" component={ModelTraining} />
+        <Route path="/model-card" component={ModelCard} />
+        <Route path="/startup-vision" component={StartupVision} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>

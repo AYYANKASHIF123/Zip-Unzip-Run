@@ -1,0 +1,898 @@
+I want to upgrade my existing GeneClassifier app into a polished 9/10+ Final Year Project and a strong future startup prototype.
+
+Important:
+Do not create a new project.
+Work only inside my existing Replit project.
+Do not remove existing pages or features unless something is broken or duplicated.
+Improve the current app professionally and make the full workflow feel real, reliable, and presentation-ready.
+
+Project context:
+This app is an AI-powered gene expression cancer subtype classifier. It has pages such as Dashboard, Analyses, Results, Model Performance, Model Comparison, Model Training, Explainable AI, Genomics Explorer, Survival Analysis, Drug Sensitivity, Gene Library, Pathway Analysis, Biomarkers, Sample Comparison, Datasets, Pipeline Monitor, Reports, Notifications, Audit Logs, Project Overview, Roadmap, Architecture, and Settings.
+
+Main goal:
+Make the app feel like a real AI genomics research platform, not only a simulated dashboard.
+
+The most important workflow should be:
+
+Dashboard → Analyses → Upload CSV → Validate CSV → Run Prediction → Results → Explainable AI → Download Report
+
+Make this workflow smooth, obvious, and impressive for an examiner, researcher, or future startup evaluator.
+
+Core upgrades required:
+
+1. Real CSV Upload Workflow
+
+Add a real CSV upload workflow on the Analyses page.
+
+The user should be able to upload a CSV file containing:
+
+* sample_id
+* 50 gene expression columns
+* numeric gene expression values
+
+After upload, the app should:
+
+* validate the CSV
+* show a preview of the uploaded sample
+* detect matched genes
+* detect missing genes
+* detect invalid or extra columns
+* detect missing/null values
+* show whether the file is ready for prediction
+* send the cleaned/validated data to the ML prediction service
+* save the analysis in the database
+* navigate to the Results page when completed
+
+Keep the current Sample ID quick classify feature, but clearly label it as:
+“Demo Sample Classification”
+
+Add three clear actions on the Analyses page:
+
+* Upload Real CSV
+* Download Sample CSV
+* Run Demo Sample
+
+The upload flow should be the main professional workflow.
+The demo sample flow should be backup for presentations.
+
+2. CSV Validation System
+
+Add a strong CSV validation section.
+
+Show:
+
+* required genes: 50
+* genes matched
+* genes missing
+* extra/unrecognized columns
+* missing values
+* invalid numeric values
+* duplicate sample IDs
+* imputation method used
+* final validation status
+
+If some genes are missing, use training-set median imputation and show this clearly.
+
+If too many genes are missing, show a warning such as:
+“Prediction may be unreliable because gene coverage is low.”
+
+Do not crash on bad files.
+Show clean, helpful error messages.
+
+3. Sample CSV Improvements
+
+Improve the Download Sample CSV button.
+
+The sample CSV should include:
+
+* 15 rows
+* 3 samples for each cancer subtype
+* sample_id
+* expected_subtype
+* all 50 driver gene columns
+* realistic numeric expression values
+
+Add a small note:
+“This file is provided for testing and demonstration purposes.”
+
+4. Results Page Upgrade
+
+Turn the Results page into a polished clinical-style research report.
+
+Add these sections:
+
+Prediction Summary:
+
+* Sample ID
+* Predicted cancer subtype
+* Confidence percentage
+* Interpretation label such as High Confidence, Moderate Confidence, or Low Confidence
+* Timestamp
+
+Subtype Probability Breakdown:
+
+* Horizontal bar chart for all five cancer subtypes
+* Highlight the predicted class
+* Show exact probability percentages
+
+Gene Coverage:
+
+* genes matched
+* genes missing
+* missing gene list
+* imputation method
+* data quality status
+
+Top Contributing Genes:
+
+* top 5 genes pushing toward the prediction
+* expression value
+* expected class mean
+* contribution direction
+* contribution strength
+
+Processing Metadata:
+
+* model version
+* processing time
+* ML service status
+* API request ID
+* database record ID if available
+
+Research Disclaimer:
+“This platform is for educational and research purposes only. It is not intended for clinical diagnosis or treatment decisions.”
+
+5. PDF Report Export
+
+Add a Download PDF Report button on the Results page.
+
+The PDF report should include:
+
+* project/app name
+* sample ID
+* predicted subtype
+* confidence score
+* subtype probabilities
+* top contributing genes
+* matched/missing genes
+* imputation method
+* model version
+* processing time
+* timestamp
+* research disclaimer
+
+Make the PDF clean, professional, and suitable for FYP presentation.
+
+Also add CSV export where relevant.
+
+6. Explainable AI Improvements
+
+Improve the Explainable AI page.
+
+It should include:
+
+* global feature importance chart
+* per-sample explanation
+* top positive contributing genes
+* top negative contributing genes
+* simple explanation of what the chart means
+* explanation that this is model interpretability, not medical proof
+
+If SHAP is not available, keep the current approximation but label it clearly as:
+“SHAP-inspired contribution score”
+
+Do not claim full SHAP if the SHAP library is not actually used.
+
+7. Model Card Page
+
+Add a Model Card page or section.
+
+Include:
+
+* Model name: Random Forest Cancer Subtype Classifier
+* Model type: Random Forest
+* Model version
+* Input: 50 gene expression values
+* Output: predicted cancer subtype and confidence score
+* Supported classes: BRCA, LUAD, COAD, GBM, PRAD
+* Accuracy
+* Precision
+* Recall
+* F1-score
+* AUC if available
+* Training data description
+* Limitations
+* Intended use
+* Not intended use
+* Ethical disclaimer
+* Clinical disclaimer
+
+Important:
+Clearly mention if the current dataset is synthetic or TCGA-mimicking.
+Do not make false claims that the model is clinically validated.
+
+8. Model Performance Improvements
+
+Improve the Model Performance page.
+
+Add:
+
+* accuracy
+* precision
+* recall
+* F1-score
+* confusion matrix
+* per-class performance
+* explanation of metrics in simple language
+* confidence calibration note if available
+* limitation note
+
+Make sure the examiner can understand why the model is good.
+
+9. Model Comparison Improvements
+
+Improve the Model Comparison page.
+
+Compare:
+
+* Random Forest
+* SVM
+* KNN
+* Logistic Regression
+* Gradient Boosting
+* MLP
+* CNN
+
+Show:
+
+* accuracy
+* F1-score
+* AUC
+* training speed
+* inference speed
+* interpretability score
+
+Add a short conclusion:
+“Random Forest was selected because it provides the best balance of accuracy, speed, interpretability, and reliability for tabular gene expression data.”
+
+10. Model Training Improvements
+
+Improve the Model Training page.
+
+Add:
+
+* active model version
+* hyperparameters
+* training status
+* progress indicator
+* training logs
+* cross-validation result
+* version history
+* rollback to previous model option if possible
+* prevent concurrent training jobs
+* clear error handling
+
+If real retraining is too heavy, make sure the UI clearly explains what is real and what is demo/simulated.
+
+Do not fake real training results without labeling them.
+
+11. Dataset Transparency
+
+Improve the Datasets page.
+
+For each dataset, show:
+
+* dataset name
+* source
+* sample count
+* gene count
+* cancer types covered
+* last updated date
+* current usage
+* status: active, archived, planned, or demo
+* link/reference placeholder if needed
+
+Add a clear section:
+“Current Prototype Dataset”
+
+Explain whether current data is:
+
+* synthetic
+* TCGA-style
+* real TCGA
+* demo-only
+
+This is important for trust.
+
+12. Startup Vision Page
+
+Add or improve a page called:
+“Startup Vision” or “Commercial Potential”
+
+Include:
+
+Problem:
+Cancer subtype classification from gene expression data can be complex, time-consuming, and difficult to interpret.
+
+Solution:
+GeneClassifier provides AI-assisted cancer subtype classification with confidence scores, explainability, reports, and model monitoring.
+
+Target users:
+
+* university researchers
+* genomics labs
+* biotech teams
+* hospital research departments
+* academic medical researchers
+
+Possible business model:
+
+* SaaS platform for research labs
+* institutional licensing
+* API access for genomics platforms
+* premium reporting and cohort analysis
+* enterprise deployment for research institutions
+
+Future roadmap:
+
+* real TCGA/ICGC integration
+* larger gene panels
+* multi-omics support
+* clinical partner validation
+* improved SHAP explanations
+* secure user authentication
+* regulatory planning
+* HIPAA/GDPR-aware architecture for future clinical use
+
+Add a strong safety note:
+“This product is currently positioned as a research support platform, not a diagnostic medical device.”
+
+13. Authentication and Roles
+
+Add proper role-based access.
+
+Roles:
+Admin:
+
+* dashboard
+* analyses
+* results
+* model training
+* model performance
+* model comparison
+* XAI
+* datasets
+* pipeline monitor
+* audit logs
+* reports
+* settings
+
+Researcher:
+
+* dashboard
+* analyses
+* results
+* XAI
+* model performance
+* model comparison
+* genomics explorer
+* datasets
+* reports
+
+Viewer/Clinician:
+
+* dashboard
+* results
+* reports
+* project overview
+* gene library
+
+Role restrictions should actually affect page access and actions.
+
+Add a clean message for restricted pages:
+“You do not have permission to access this feature.”
+
+14. Audit Logs and Compliance
+
+Improve Audit Logs.
+
+Track:
+
+* user login
+* analysis submitted
+* CSV uploaded
+* prediction completed
+* prediction failed
+* report downloaded
+* model trained
+* model version changed
+* settings changed
+* data exported
+
+Each log should show:
+
+* action
+* user/role
+* timestamp
+* severity
+* related sample ID or model version
+
+This will make the app look more enterprise-ready.
+
+15. Pipeline Monitor Improvements
+
+Improve the Pipeline Monitor page.
+
+Show the six stages clearly:
+
+1. Data Ingestion
+2. Quality Control
+3. Normalisation
+4. Feature Extraction
+5. Model Inference
+6. Results Storage
+
+Each stage should show:
+
+* queued
+* processing
+* completed
+* failed
+* time taken
+* warning messages if any
+
+This page should help debug failed analyses.
+
+16. Notifications
+
+Improve Notifications.
+
+Add notifications for:
+
+* analysis completed
+* analysis failed
+* model training completed
+* report generated
+* CSV validation warning
+* ML service unavailable
+
+Show:
+
+* unread/read state
+* severity: info, success, warning, error
+* timestamp
+* related page link
+
+17. Error Handling and Reliability
+
+Make the app reliable.
+
+If the ML service is down:
+
+* do not crash
+* show a clean error message
+* suggest running a demo sample
+* keep the uploaded file validation result visible
+
+If the API fails:
+
+* show retry button
+* show helpful message
+
+If the database fails:
+
+* show system status warning
+
+Add health checks:
+
+* frontend status
+* Express API status
+* Python ML service status
+* database status
+
+Add a small System Status section on Dashboard or Settings.
+
+18. UI/UX Improvements
+
+Make the UI feel professional, modern, and consistent.
+
+Improve:
+
+* spacing
+* card hierarchy
+* button labels
+* page headings
+* loading states
+* empty states
+* error states
+* success states
+* mobile responsiveness
+* chart readability
+* dark/light mode if available
+
+Add tooltips for technical terms:
+
+* confidence score
+* subtype probability
+* imputation
+* Random Forest
+* F1-score
+* confusion matrix
+* PCA
+* IC50
+* Kaplan-Meier
+* feature importance
+
+Add simple explanations so a non-technical examiner can understand the app.
+
+19. Accessibility
+
+Improve accessibility.
+
+Add:
+
+* proper labels for inputs
+* keyboard navigation
+* readable contrast
+* alt text for icons/charts where possible
+* clear focus states
+* semantic headings
+* ARIA labels where needed
+
+20. Demo Mode
+
+Add a dedicated Demo Mode.
+
+Demo Mode should let the presenter run the full app without needing external data.
+
+Add:
+
+* Run BRCA sample
+* Run LUAD sample
+* Run COAD sample
+* Run GBM sample
+* Run PRAD sample
+
+Each demo sample should produce:
+
+* prediction
+* confidence
+* subtype probabilities
+* gene contribution
+* downloadable report
+
+Label demo results clearly:
+“Demo result generated from sample data.”
+
+21. Examiner Mode / Presentation Mode
+
+Add a simple Presentation Mode page or section.
+
+It should show the recommended demo flow:
+
+1. Problem Overview
+2. Architecture
+3. Upload Sample
+4. Run Prediction
+5. View Results
+6. Explainable AI
+7. Model Performance
+8. Download Report
+9. Startup Vision
+10. Roadmap
+
+Add short talking points for each step.
+
+This will help me present the project confidently.
+
+22. Architecture Page Improvements
+
+Improve the Architecture page.
+
+Show:
+
+* React frontend
+* Express API
+* Python ML service
+* PostgreSQL database
+* data flow diagram
+* prediction request flow
+* model training flow
+* report generation flow
+* security/role flow
+
+Add clear explanation:
+“The frontend sends validated gene expression data to the Express API, which stores the analysis record and communicates with the Python ML service for prediction. The ML service returns subtype probabilities, confidence score, gene coverage, and explanation metadata.”
+
+23. Project Overview Improvements
+
+Improve the Project Overview page.
+
+It should explain:
+
+* what cancer subtype classification is
+* why gene expression matters
+* what problem the app solves
+* who can use it
+* how the model works at a high level
+* why explainability is important
+* project limitations
+* future vision
+
+Keep it understandable for non-technical examiners.
+
+24. Roadmap Improvements
+
+Improve the Roadmap page.
+
+Use phases:
+
+Phase 1: FYP Prototype
+
+* dashboard
+* prediction workflow
+* model evaluation
+* report generation
+* basic explainability
+
+Phase 2: Research Platform
+
+* real dataset integration
+* improved XAI
+* cohort analysis
+* model versioning
+* API access
+
+Phase 3: Clinical Validation Suite
+
+* clinical partner testing
+* larger datasets
+* external validation
+* compliance planning
+* security hardening
+
+Phase 4: Enterprise Multi-Omics Platform
+
+* DNA mutation data
+* RNA expression data
+* methylation data
+* proteomics
+* institutional deployment
+
+25. Reports Page
+
+Improve the Reports page.
+
+Allow:
+
+* per-sample report
+* cohort summary report
+* model performance report
+* CSV export
+* PDF export
+
+Show report history:
+
+* report type
+* generated by
+* timestamp
+* related sample/model
+* download button
+
+26. Sample Comparison
+
+Improve Sample Comparison.
+
+Allow users to compare two completed samples.
+
+Show:
+
+* predicted subtype for both
+* confidence for both
+* probability comparison
+* gene expression overlay
+* similarity score
+* top differing genes
+
+27. Gene Library
+
+Improve Gene Library.
+
+Each gene should show:
+
+* official symbol
+* full name
+* biological function
+* associated cancer subtypes
+* mutation type
+* oncogene/tumor suppressor label
+* whether it is used by the model
+* importance score if available
+
+Add search and filters:
+
+* by cancer type
+* by gene name
+* by mutation category
+* by importance
+
+28. Drug Sensitivity Page
+
+Improve Drug Sensitivity.
+
+Show:
+
+* subtype
+* drug
+* target gene/pathway
+* IC50 or sensitivity score
+* simple explanation
+* disclaimer
+
+Important:
+Add a disclaimer:
+“Drug sensitivity information is for research context only and must not be used for treatment decisions.”
+
+29. Survival Analysis Page
+
+Improve Survival Analysis.
+
+Show:
+
+* Kaplan-Meier curves
+* median survival table
+* subtype selector
+* simple explanation of survival probability
+* data source note
+* disclaimer
+
+Important:
+Clearly mention if survival data is demo/pre-computed and not patient-specific.
+
+30. Security Improvements
+
+Add basic security improvements:
+
+* validate all inputs
+* restrict file uploads to CSV only
+* limit upload size
+* sanitize file names
+* avoid exposing internal errors
+* protect admin-only routes
+* do not expose secrets or API keys
+* use environment variables
+* add rate limiting if possible
+* add safe CORS settings
+
+31. Data Privacy Improvements
+
+Add a Data Privacy section in Settings or Project Overview.
+
+Mention:
+
+* uploaded samples are used for prediction
+* no real patient data should be uploaded in the prototype
+* users should anonymize sample IDs
+* this prototype is not approved for protected health information
+* future production version would require stronger privacy controls
+
+32. API Documentation
+
+Add or improve API documentation.
+
+Document important endpoints:
+
+* POST /api/analyses
+* GET /api/analyses
+* GET /api/analyses/:id
+* POST /ml/predict
+* GET /api/metrics/model-performance
+* GET /api/metrics/confusion-matrix
+* GET /api/xai/importance
+* GET /api/xai/explain/:analysisId
+* POST /api/models/train
+* GET /api/genes
+* GET /api/reports/:id
+
+Add request/response examples where possible.
+
+33. Testing and Quality
+
+Add basic tests or testing helpers.
+
+Add:
+
+* CSV validation test cases
+* sample prediction test
+* API health test
+* error state test
+* role access test
+
+Create test files or documentation explaining how to test.
+
+34. README and Setup Documentation
+
+Improve the README.
+
+Include:
+
+* project overview
+* tech stack
+* setup instructions
+* environment variables
+* how to run frontend
+* how to run backend
+* how to run ML service
+* how to test prediction flow
+* how to use demo mode
+* limitations
+* disclaimer
+* future work
+
+35. Final FYP Documentation Page
+
+Add a page or section called:
+“FYP Summary”
+
+Include:
+
+* problem statement
+* objectives
+* methodology
+* system architecture
+* ML model used
+* dataset description
+* results
+* limitations
+* future work
+* startup potential
+
+This page should help me explain the project during viva/demo.
+
+36. Trust and Honesty
+
+Very important:
+Do not present synthetic/demo data as real clinical data.
+Do not claim the app diagnoses cancer.
+Do not claim clinical validation unless it exists.
+Use wording like:
+“research support”
+“educational prototype”
+“AI-assisted classification”
+“not for clinical diagnosis”
+“requires clinical validation before real-world medical use”
+
+37. Final Polish Checklist
+
+Before finishing, check that:
+
+* app runs without errors
+* navigation works
+* dashboard loads
+* CSV sample downloads
+* CSV upload validates
+* prediction runs
+* results page displays
+* XAI page works
+* PDF report downloads
+* model performance page loads
+* model comparison page loads
+* startup vision page exists
+* architecture page is clear
+* roadmap is clear
+* role restrictions work
+* bad CSV files do not crash the app
+* ML service failure is handled cleanly
+* disclaimers are visible
+* UI looks professional
+* mobile layout is acceptable
+* README is updated
+
+Final deliverable:
+Upgrade my existing GeneClassifier app into a complete, polished, reliable, demo-ready AI genomics research platform suitable for:
+
+1. Final Year Project presentation
+2. Examiner evaluation
+3. Future startup prototype discussion
+
+Focus especially on making the real upload-to-prediction flow undeniable, polished, and trustworthy.

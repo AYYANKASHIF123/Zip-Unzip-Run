@@ -153,7 +153,26 @@ export const GetAnalysisResultsResponse = zod.object({
   "probability": zod.number()
 })),
   "molecularSignature": zod.array(zod.string()),
-  "clinicalNotes": zod.string()
+  "clinicalNotes": zod.string(),
+  "genesMissing": zod.number().optional().describe('Count of the 50 model input genes not present in the uploaded\/source data.'),
+  "missingGenesList": zod.array(zod.string()).optional(),
+  "imputationMethod": zod.string().optional(),
+  "dataQualityStatus": zod.enum(['complete', 'imputed', 'low-coverage']).optional(),
+  "modelVersion": zod.string().optional(),
+  "apiRequestId": zod.string().nullish(),
+  "contribution": zod.object({
+  "sampleId": zod.string().optional(),
+  "predictedSubtype": zod.string().optional(),
+  "confidenceScore": zod.number().optional(),
+  "contributions": zod.array(zod.object({
+  "gene": zod.string().optional(),
+  "importance": zod.number().optional(),
+  "scaledValue": zod.number().optional(),
+  "classMean": zod.number().optional(),
+  "contribution": zod.number().optional(),
+  "direction": zod.string().optional()
+})).optional()
+}).nullish().describe('Per-sample explainability payload from the ML service (SHAP-inspired feature contributions).')
 })
 
 

@@ -1,0 +1,1 @@
+- [GeneClassifier XAI honesty](geneclassifier-xai-honesty.md) — always call it "MDI + class-mean delta", never "SHAP", when labeling contribution/explainability scores in this app.

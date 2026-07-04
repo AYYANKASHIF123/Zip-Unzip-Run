@@ -7,7 +7,7 @@ import {
   Microscope, HeartPulse, FlaskConical, BookOpen, GitBranch,
   Cpu, FileText, Bell, Database, GitCompare,
   Sparkles, BarChart3, Network, Map, Settings, ClipboardList,
-  Layers, Info, ShieldCheck, PlayCircle,
+  Layers, Info, ShieldCheck, PlayCircle, ClipboardCheck, Rocket,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -24,6 +24,8 @@ const NAV_GROUPS = [
       { href: "/overview",      label: "Project Overview", icon: Info        },
       { href: "/roadmap",       label: "Roadmap",          icon: Map         },
       { href: "/architecture",  label: "Architecture",     icon: Layers      },
+      { href: "/model-card",    label: "Model Card",       icon: ClipboardCheck },
+      { href: "/startup-vision",label: "Startup Vision",   icon: Rocket      },
     ],
   },
   {

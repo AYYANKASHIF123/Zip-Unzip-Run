@@ -99,6 +99,34 @@ export interface AnalysisInput {
   stage?: string | null;
 }
 
+export type ClassificationResultDataQualityStatus = typeof ClassificationResultDataQualityStatus[keyof typeof ClassificationResultDataQualityStatus];
+
+
+export const ClassificationResultDataQualityStatus = {
+  complete: 'complete',
+  imputed: 'imputed',
+  'low-coverage': 'low-coverage',
+} as const;
+
+export type ClassificationResultContributionContributionsItem = {
+  gene?: string;
+  importance?: number;
+  scaledValue?: number;
+  classMean?: number;
+  contribution?: number;
+  direction?: string;
+};
+
+/**
+ * Per-sample explainability payload from the ML service (SHAP-inspired feature contributions).
+ */
+export type ClassificationResultContribution = {
+  sampleId?: string;
+  predictedSubtype?: string;
+  confidenceScore?: number;
+  contributions?: ClassificationResultContributionContributionsItem[];
+} | null;
+
 export interface Biomarker {
   geneId: string;
   geneName: string;
@@ -125,6 +153,16 @@ export interface ClassificationResult {
   subtypeProbabilities: SubtypeProbability[];
   molecularSignature: string[];
   clinicalNotes: string;
+  /** Count of the 50 model input genes not present in the uploaded/source data. */
+  genesMissing?: number;
+  missingGenesList?: string[];
+  imputationMethod?: string;
+  dataQualityStatus?: ClassificationResultDataQualityStatus;
+  modelVersion?: string;
+  /** @nullable */
+  apiRequestId?: string | null;
+  /** Per-sample explainability payload from the ML service (SHAP-inspired feature contributions). */
+  contribution?: ClassificationResultContribution;
 }
 
 export interface SubtypeMetric {

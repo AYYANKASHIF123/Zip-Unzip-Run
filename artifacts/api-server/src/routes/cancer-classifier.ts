@@ -28,25 +28,62 @@ function buildGeneExpressionCsv(sampleId: string): string {
   return `${header}\n${row}\n`;
 }
 
-async function runMlPrediction(analysis: Record<string, unknown>): Promise<void> {
+function requestId(): string {
+  return `REQ-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`.toUpperCase();
+}
+
+interface Analysis {
+  id: number;
+  sampleId: string;
+  dataSource: string;
+  status: "completed" | "processing" | "pending" | "failed";
+  cancerSubtype: string | null;
+  confidenceScore: number | null;
+  processingTimeMs: number | null;
+  createdAt: string;
+  completedAt: string | null;
+  patientAge: number | null;
+  patientGender: string | null;
+  tissueType: string | null;
+  stage: string | null;
+  geneCount: number | null;
+  subtypeProbabilities?: Record<string, number>;
+  genesMissing?: number;
+  missingGenesList?: string[];
+  imputationMethod?: string;
+  dataQualityStatus?: string;
+  modelVersion?: string;
+  apiRequestId?: string | null;
+  contribution?: unknown;
+}
+
+async function runMlPredictionFromCsv(
+  analysis: Analysis,
+  csv: string,
+): Promise<void> {
   const start = Date.now();
   const sampleId = analysis.sampleId as string;
+  const reqId = requestId();
+  analysis.apiRequestId = reqId;
   try {
-    const csv = buildGeneExpressionCsv(sampleId);
     const blob = new Blob([csv], { type: "text/csv" });
-    const formData = new FormData();
-    formData.append("file", blob, `${sampleId}.csv`);
 
+    const predictForm = new FormData();
+    predictForm.append("file", blob, `${sampleId}.csv`);
     const response = await fetch("http://localhost:8000/ml/predict", {
       method: "POST",
-      body: formData,
+      body: predictForm,
     });
     if (!response.ok) throw new Error(`ML service returned ${response.status}`);
 
-    const result = await response.json() as { predictions?: Array<{
-      predictedSubtype: string; confidenceScore: number; genesMatched: number;
-      subtypeProbabilities: Record<string, number>;
-    }> };
+    const result = await response.json() as {
+      predictions?: Array<{
+        predictedSubtype: string; confidenceScore: number; genesMatched: number;
+        genesMissing?: number; missingGenes?: string[];
+        subtypeProbabilities: Record<string, number>;
+      }>;
+      modelVersion?: string;
+    };
     const pred = result.predictions?.[0];
     if (!pred) throw new Error("No predictions returned from ML service");
 
@@ -56,12 +93,36 @@ async function runMlPrediction(analysis: Record<string, unknown>): Promise<void>
     analysis.processingTimeMs = Date.now() - start;
     analysis.completedAt = new Date().toISOString();
     analysis.geneCount = pred.genesMatched;
+    analysis.genesMissing = pred.genesMissing ?? 0;
+    analysis.missingGenesList = pred.missingGenes ?? [];
+    analysis.imputationMethod = (pred.genesMissing ?? 0) > 0 ? "Training-set median imputation" : "None (all genes present)";
+    analysis.dataQualityStatus = (pred.genesMissing ?? 0) > 10 ? "low-coverage" : (pred.genesMissing ?? 0) > 0 ? "imputed" : "complete";
+    analysis.modelVersion = result.modelVersion ?? "RandomForest v1.0";
     analysis.subtypeProbabilities = pred.subtypeProbabilities; // store full probability map
+
+    // Fetch a per-sample explanation using the same real gene values (best effort)
+    try {
+      const explainForm = new FormData();
+      explainForm.append("file", blob, `${sampleId}.csv`);
+      const er = await fetch("http://localhost:8000/ml/explain", { method: "POST", body: explainForm });
+      if (er.ok) {
+        const ed = await er.json() as { explanations?: unknown[] };
+        analysis.contribution = ed.explanations?.[0] ?? null;
+      }
+    } catch {
+      // explanation is best-effort; ignore failures
+    }
+
     logger.info({ sampleId, subtype: pred.predictedSubtype, confidence: pred.confidenceScore }, "ML prediction completed");
   } catch (err) {
     logger.error({ err, sampleId }, "ML prediction failed");
     analysis.status = "failed";
   }
+}
+
+async function runMlPrediction(analysis: Analysis): Promise<void> {
+  const csv = buildGeneExpressionCsv(analysis.sampleId);
+  await runMlPredictionFromCsv(analysis, csv);
 }
 
 const router: IRouter = Router();
@@ -76,7 +137,7 @@ const CANCER_SUBTYPES = [
   { name: "PRAD (Prostate)",    count: 21, percentage: 14.0, color: "#f59e0b", fiveYearSurvival: 0.98, medianAge: 66 },
 ];
 
-const ANALYSES = [
+const ANALYSES: Analysis[] = [
   { id: 1,  sampleId: "TCGA-A7-A0CE", dataSource: "TCGA Pan-Cancer Atlas",     status: "completed", cancerSubtype: "BRCA (Breast)",      confidenceScore: 0.947, processingTimeMs: 3421, createdAt: "2026-05-10T10:23:00Z", completedAt: "2026-05-10T10:23:03Z", patientAge: 52, patientGender: "F", tissueType: "Invasive Ductal Carcinoma", stage: "II",  geneCount: 20531 },
   { id: 2,  sampleId: "TCGA-55-6543", dataSource: "GEO Gene Expression Omnibus", status: "completed", cancerSubtype: "LUAD (Lung Adeno)", confidenceScore: 0.912, processingTimeMs: 2870, createdAt: "2026-05-11T11:05:00Z", completedAt: "2026-05-11T11:05:03Z", patientAge: 68, patientGender: "M", tissueType: "Adenocarcinoma",          stage: "III", geneCount: 20531 },
   { id: 3,  sampleId: "TCGA-AA-3662", dataSource: "TCGA Pan-Cancer Atlas",     status: "completed", cancerSubtype: "COAD (Colon)",       confidenceScore: 0.883, processingTimeMs: 3102, createdAt: "2026-05-13T09:14:00Z", completedAt: "2026-05-13T09:14:03Z", patientAge: 71, patientGender: "M", tissueType: "Adenocarcinoma",          stage: "III", geneCount: 20531 },
@@ -153,17 +214,65 @@ router.get("/analyses", async (_req: Request, res: Response): Promise<void> => {
 router.post("/analyses", async (req: Request, res: Response): Promise<void> => {
   const { sampleId, dataSource, patientAge, patientGender, tissueType, stage } = req.body;
   if (!sampleId || !dataSource) { res.status(400).json({ error: "sampleId and dataSource are required" }); return; }
-  const newAnalysis: Record<string, unknown> = {
+  const newAnalysis: Analysis = {
     id: ANALYSES.length + 1, sampleId, dataSource, status: "processing",
     cancerSubtype: null, confidenceScore: null, processingTimeMs: null,
     createdAt: new Date().toISOString(), completedAt: null,
     patientAge: patientAge ?? null, patientGender: patientGender ?? null,
     tissueType: tissueType ?? null, stage: stage ?? null, geneCount: null,
   };
-  ANALYSES.push(newAnalysis as never);
+  ANALYSES.push(newAnalysis);
   res.status(201).json(newAnalysis);
   // Fire-and-forget: run real ML prediction in background, mutate record in-place
   runMlPrediction(newAnalysis).catch(() => { /* already logged inside */ });
+});
+
+// Real CSV upload workflow — accepts already-validated sample rows from the client
+// (client performs gene-matching/validation before submitting) and runs each one
+// through the actual ML prediction + explanation pipeline using the real values.
+router.post("/analyses/upload", async (req: Request, res: Response): Promise<void> => {
+  const { samples, dataSource } = req.body as {
+    samples?: Array<{ sampleId: string; values: Record<string, number> }>;
+    dataSource?: string;
+  };
+  if (!samples || !Array.isArray(samples) || samples.length === 0) {
+    res.status(400).json({ error: "samples array is required" });
+    return;
+  }
+  if (samples.length > 50) {
+    res.status(400).json({ error: "Maximum 50 samples per upload batch" });
+    return;
+  }
+
+  const created: Analysis[] = [];
+  for (const sample of samples) {
+    if (!sample.sampleId || typeof sample.values !== "object") continue;
+    const newAnalysis: Analysis = {
+      id: ANALYSES.length + 1 + created.length,
+      sampleId: sample.sampleId,
+      dataSource: dataSource || "CSV Upload",
+      status: "processing",
+      cancerSubtype: null, confidenceScore: null, processingTimeMs: null,
+      createdAt: new Date().toISOString(), completedAt: null,
+      patientAge: null, patientGender: null, tissueType: null, stage: null,
+      geneCount: null,
+    };
+    created.push(newAnalysis);
+  }
+  created.forEach(a => ANALYSES.push(a));
+  res.status(202).json({ analyses: created });
+
+  // Run predictions concurrently in the background; client polls /analyses/:id
+  Promise.all(
+    created.map((analysis, i) => {
+      const values = samples[i].values;
+      const genes = Object.keys(values);
+      const header = ["sampleId", ...genes].join(",");
+      const row = [analysis.sampleId, ...genes.map(g => values[g])].join(",");
+      const csv = `${header}\n${row}\n`;
+      return runMlPredictionFromCsv(analysis, csv);
+    })
+  ).catch((err) => logger.error({ err }, "Batch upload prediction failed"));
 });
 
 router.get("/analyses/:id", async (req: Request, res: Response): Promise<void> => {
@@ -198,6 +307,14 @@ router.get("/analyses/:id/results", async (req: Request, res: Response): Promise
     confidenceScore: analysis.confidenceScore,
     topBiomarkers,
     treatmentPathways: treatmentMap[analysis.cancerSubtype!] ?? [],
+    // Real gene-coverage + explainability metadata (populated by the ML pipeline)
+    genesMissing: analysis.genesMissing ?? 0,
+    missingGenesList: analysis.missingGenesList ?? [],
+    imputationMethod: analysis.imputationMethod ?? "None (all genes present)",
+    dataQualityStatus: analysis.dataQualityStatus ?? "complete",
+    modelVersion: analysis.modelVersion ?? "RandomForest v1.0",
+    apiRequestId: analysis.apiRequestId ?? null,
+    contribution: analysis.contribution ?? null,
     subtypeProbabilities: (() => {
       // Use real ML probabilities if stored; fall back to mock for legacy records
       const stored = analysis.subtypeProbabilities as Record<string, number> | undefined;
@@ -639,15 +756,15 @@ router.get("/xai/importance", async (req: Request, res: Response): Promise<void>
 router.get("/xai/explain/:analysisId", async (req: Request, res: Response): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.analysisId) ? req.params.analysisId[0] : req.params.analysisId, 10);
   const analysis = ANALYSES.find(a => a.id === id);
-  if (!analysis || (analysis as Record<string, unknown>).status !== "completed") {
+  if (!analysis || analysis.status !== "completed") {
     res.status(404).json({ error: "Analysis not found or not completed" });
     return;
   }
   try {
-    const csv = buildGeneExpressionCsv((analysis as Record<string, unknown>).sampleId as string);
+    const csv = buildGeneExpressionCsv(analysis.sampleId);
     const blob = new Blob([csv], { type: "text/csv" });
     const formData = new FormData();
-    formData.append("file", blob, `${(analysis as Record<string, unknown>).sampleId}.csv`);
+    formData.append("file", blob, `${analysis.sampleId}.csv`);
     const r = await fetch("http://localhost:8000/ml/explain", { method: "POST", body: formData });
     if (!r.ok) throw new Error(`ML service ${r.status}`);
     const data = await r.json() as { explanations?: unknown[] };
@@ -655,7 +772,7 @@ router.get("/xai/explain/:analysisId", async (req: Request, res: Response): Prom
     res.json({
       ...(explanation as object),
       analysisId: id,
-      dataSource: (analysis as Record<string, unknown>).dataSource,
+      dataSource: analysis.dataSource,
     });
   } catch (err) {
     req.log.error({ err }, "XAI explain failed");

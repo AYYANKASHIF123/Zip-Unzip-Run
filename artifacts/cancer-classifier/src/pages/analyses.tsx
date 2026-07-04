@@ -1,6 +1,7 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useListAnalyses, useCreateAnalysis, useGetAnalysis } from "@workspace/api-client-react";
+import Papa from "papaparse";
 import { HeaderControls } from "@/components/layout/HeaderControls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,8 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Brain, Download, FileSpreadsheet } from "lucide-react";
+import {
+  Loader2, Brain, Download, FileSpreadsheet, Upload, CheckCircle2,
+  AlertTriangle, XCircle, FileWarning,
+} from "lucide-react";
 
 // ── Sample data generator ─────────────────────────────────────────────────────
 
@@ -93,6 +98,71 @@ function downloadCSV() {
   URL.revokeObjectURL(url);
 }
 
+// ── Real CSV upload validation ────────────────────────────────────────────────
+
+interface ParsedRow {
+  sampleId: string;
+  values: Partial<Record<string, number>>;
+  invalidCols: string[];
+}
+
+interface ValidationReport {
+  rows: ParsedRow[];
+  headers: string[];
+  matchedGenes: string[];
+  missingGenes: string[];
+  extraColumns: string[];
+  duplicateIds: string[];
+  invalidRowCount: number;
+  totalRows: number;
+  blocking: string | null;
+}
+
+const GENE_SET = new Set<string>(GENES_50 as readonly string[]);
+const NON_GENE_COLUMNS = new Set(["sample_id", "sampleid", "sample id", "id", "expected_subtype"]);
+
+function validateCsvText(text: string): ValidationReport {
+  const parsed = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true });
+  const headers = (parsed.meta.fields ?? []).map((h) => h.trim());
+  const headerLookup = new Map(headers.map((h) => [h.toLowerCase(), h]));
+  const idCol = headerLookup.get("sample_id") ?? headerLookup.get("sampleid") ?? headerLookup.get("sample id") ?? headerLookup.get("id") ?? headers[0];
+
+  const matchedGenes = headers.filter((h) => GENE_SET.has(h));
+  const missingGenes = (GENES_50 as readonly string[]).filter((g) => !headers.includes(g));
+  const extraColumns = headers.filter((h) => !GENE_SET.has(h) && !NON_GENE_COLUMNS.has(h.toLowerCase()));
+
+  const seenIds = new Set<string>();
+  const duplicateIds: string[] = [];
+  const rows: ParsedRow[] = [];
+  let invalidRowCount = 0;
+
+  for (const raw of parsed.data) {
+    const sampleId = (idCol ? raw[idCol] : "")?.trim();
+    if (!sampleId) continue;
+    if (seenIds.has(sampleId)) duplicateIds.push(sampleId);
+    seenIds.add(sampleId);
+
+    const values: Partial<Record<string, number>> = {};
+    const invalidCols: string[] = [];
+    for (const gene of matchedGenes) {
+      const cell = raw[gene];
+      if (cell === undefined || cell === "") continue;
+      const num = Number(cell);
+      if (Number.isNaN(num)) invalidCols.push(gene);
+      else values[gene] = num;
+    }
+    if (invalidCols.length > 0) invalidRowCount++;
+    rows.push({ sampleId, values, invalidCols });
+  }
+
+  let blocking: string | null = null;
+  if (headers.length === 0) blocking = "File appears empty or is not a valid CSV.";
+  else if (matchedGenes.length === 0) blocking = "No recognized gene columns found — none of the 50 required biomarker genes matched the file headers.";
+  else if (rows.length === 0) blocking = "No valid sample rows found (missing a sample ID column?).";
+
+  return { rows, headers, matchedGenes, missingGenes, extraColumns, duplicateIds, invalidRowCount, totalRows: rows.length, blocking };
+}
+
 export default function Analyses() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -103,6 +173,14 @@ export default function Analyses() {
   const [sampleId, setSampleId] = useState("");
   const [dataSource, setDataSource] = useState("TCGA");
   const [pollingId, setPollingId] = useState<number | null>(null);
+
+  // ── Real CSV upload state ──
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [report, setReport] = useState<ValidationReport | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadIds, setUploadIds] = useState<number[]>([]);
+  const [uploadDataSource, setUploadDataSource] = useState("Internal");
 
   // Poll the newly-submitted analysis every 2s until the ML model finishes
   const { data: polledAnalysis } = useGetAnalysis(pollingId!, {
@@ -131,6 +209,68 @@ export default function Analyses() {
       }
     }
   }, [polledAnalysis, queryClient, toast]);
+
+  // Poll the analyses list while uploaded samples are still processing
+  useEffect(() => {
+    if (uploadIds.length === 0) return;
+    const interval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [uploadIds, queryClient]);
+
+  useEffect(() => {
+    if (uploadIds.length === 0 || !data) return;
+    const tracked = data.filter((a) => uploadIds.includes((a as { id: number }).id));
+    if (tracked.length === uploadIds.length && tracked.every((a) => (a as { status: string }).status !== "processing" && (a as { status: string }).status !== "pending")) {
+      const completed = tracked.filter((a) => (a as { status: string }).status === "completed").length;
+      toast({
+        title: "Batch prediction complete",
+        description: `${completed} of ${uploadIds.length} sample(s) classified successfully.`,
+      });
+      setUploadIds([]);
+    }
+  }, [data, uploadIds, toast]);
+
+  const handleFileSelected = useCallback((file: File) => {
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      setReport(validateCsvText(text));
+    };
+    reader.readAsText(file);
+  }, []);
+
+  const handleRunUpload = () => {
+    if (!report || report.blocking) return;
+    setUploading(true);
+    const samples = report.rows.map((r) => ({ sampleId: r.sampleId, values: r.values }));
+    fetch(`${import.meta.env.BASE_URL}api/analyses/upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ samples, dataSource: uploadDataSource }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await res.text());
+        return res.json() as Promise<{ analyses: Array<{ id: number }> }>;
+      })
+      .then((body) => {
+        toast({ title: `Uploaded ${samples.length} sample(s) — running predictions…` });
+        setUploadIds(body.analyses.map((a) => a.id));
+        setReport(null);
+        setFileName(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        queryClient.invalidateQueries({ queryKey: ["/api/analyses"] });
+      })
+      .catch(() => {
+        toast({ title: "Upload failed", description: "Could not submit CSV to the server.", variant: "destructive" });
+      })
+      .finally(() => setUploading(false));
+  };
+
+  const coveragePct = report ? Math.round((report.matchedGenes.length / GENES_50.length) * 100) : 0;
+  const lowCoverage = report ? coveragePct < 70 : false;
 
   const lastRefreshed = useMemo(() => {
     if (!dataUpdatedAt) return null;
@@ -189,56 +329,132 @@ export default function Analyses() {
                 Submit New Analysis
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="sampleId">Sample ID</Label>
-                  <Input
-                    id="sampleId"
-                    value={sampleId}
-                    onChange={(e) => setSampleId(e.target.value)}
-                    placeholder="e.g. TCGA-02-0001"
-                    disabled={createAnalysis.isPending || pollingId !== null}
-                  />
+            <CardContent className="space-y-4">
+              {/* ── Real CSV upload ── */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Upload className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-xs font-semibold uppercase tracking-wide">Upload Real CSV</span>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="dataSource">Data Source</Label>
-                  <Select
-                    value={dataSource}
-                    onValueChange={setDataSource}
-                    disabled={createAnalysis.isPending || pollingId !== null}
-                  >
-                    <SelectTrigger id="dataSource">
-                      <SelectValue placeholder="Select data source" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="TCGA">TCGA</SelectItem>
-                      <SelectItem value="ICGC">ICGC</SelectItem>
-                      <SelectItem value="Internal">Internal DB</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Upload your own gene expression CSV (sample_id + up to 50 biomarker gene columns). Missing genes are median-imputed automatically.
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handleFileSelected(f);
+                  }}
+                />
                 <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={createAnalysis.isPending || pollingId !== null || !sampleId.trim()}
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2 text-xs"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
                 >
-                  {(createAnalysis.isPending || pollingId !== null) ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Running ML…</>
-                  ) : (
-                    "Submit Analysis"
-                  )}
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  {fileName ?? "Choose CSV File"}
                 </Button>
 
-                {pollingId !== null && (
+                {report && (
+                  <div className="rounded-md border p-3 space-y-2 text-xs">
+                    {report.blocking ? (
+                      <Alert variant="destructive" className="py-2">
+                        <XCircle className="h-4 w-4" />
+                        <AlertTitle className="text-xs">Cannot process file</AlertTitle>
+                        <AlertDescription className="text-xs">{report.blocking}</AlertDescription>
+                      </Alert>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Rows detected</span>
+                          <span className="font-medium">{report.totalRows}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Gene coverage</span>
+                          <span className={`font-medium ${lowCoverage ? "text-amber-600" : "text-green-600"}`}>
+                            {report.matchedGenes.length}/{GENES_50.length} ({coveragePct}%)
+                          </span>
+                        </div>
+                        {lowCoverage && (
+                          <Alert className="py-2 border-amber-300 bg-amber-50 dark:bg-amber-950/20">
+                            <AlertTriangle className="h-4 w-4 text-amber-600" />
+                            <AlertDescription className="text-xs text-amber-800 dark:text-amber-400">
+                              Low gene coverage (&lt;70%) — predictions will rely heavily on imputed values and may be less reliable.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                        {report.missingGenes.length > 0 && (
+                          <div>
+                            <span className="text-muted-foreground">Missing genes: </span>
+                            <span className="font-mono">{report.missingGenes.slice(0, 6).join(", ")}{report.missingGenes.length > 6 ? ` +${report.missingGenes.length - 6} more` : ""}</span>
+                          </div>
+                        )}
+                        {report.extraColumns.length > 0 && (
+                          <div>
+                            <span className="text-muted-foreground">Ignored columns: </span>
+                            <span className="font-mono">{report.extraColumns.join(", ")}</span>
+                          </div>
+                        )}
+                        {report.duplicateIds.length > 0 && (
+                          <div className="flex items-start gap-1.5 text-amber-700 dark:text-amber-400">
+                            <FileWarning className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                            <span>Duplicate sample IDs: {report.duplicateIds.join(", ")}</span>
+                          </div>
+                        )}
+                        {report.invalidRowCount > 0 && (
+                          <div className="flex items-start gap-1.5 text-amber-700 dark:text-amber-400">
+                            <FileWarning className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                            <span>{report.invalidRowCount} row(s) contain non-numeric values (ignored).</span>
+                          </div>
+                        )}
+                        {report.missingGenes.length === 0 && report.duplicateIds.length === 0 && report.invalidRowCount === 0 && (
+                          <div className="flex items-center gap-1.5 text-green-700 dark:text-green-400">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>File validated — ready to run.</span>
+                          </div>
+                        )}
+
+                        <Select value={uploadDataSource} onValueChange={setUploadDataSource} disabled={uploading}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="Data source" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Internal">Internal DB</SelectItem>
+                            <SelectItem value="TCGA">TCGA</SelectItem>
+                            <SelectItem value="ICGC">ICGC</SelectItem>
+                            <SelectItem value="CSV Upload">CSV Upload</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          size="sm"
+                          className="w-full gap-2"
+                          onClick={handleRunUpload}
+                          disabled={uploading}
+                        >
+                          {uploading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Uploading…</> : `Run Prediction (${report.totalRows} sample${report.totalRows === 1 ? "" : "s"})`}
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {uploadIds.length > 0 && (
                   <p className="text-xs text-center text-muted-foreground">
-                    Random Forest is classifying 50 biomarker genes…
+                    <Loader2 className="inline h-3 w-3 animate-spin mr-1" />
+                    Classifying {uploadIds.length} uploaded sample(s)…
                   </p>
                 )}
-              </form>
+              </div>
 
-              <Separator className="my-4" />
+              <Separator />
 
+              {/* ── Sample data download ── */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <FileSpreadsheet className="h-3.5 w-3.5 text-muted-foreground" />
@@ -259,6 +475,66 @@ export default function Analyses() {
                 <p className="text-[10px] text-muted-foreground text-center">
                   52 columns · 15 rows · all 5 cancer subtypes
                 </p>
+              </div>
+
+              <Separator />
+
+              {/* ── Demo sample classification (seeded synthetic data) ── */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Brain className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Demo Sample Classification</span>
+                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  This generates deterministic synthetic gene values from a Sample ID for testing and demonstration purposes — it does not use uploaded data.
+                </p>
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="sampleId" className="text-xs">Sample ID</Label>
+                    <Input
+                      id="sampleId"
+                      value={sampleId}
+                      onChange={(e) => setSampleId(e.target.value)}
+                      placeholder="e.g. TCGA-02-0001"
+                      disabled={createAnalysis.isPending || pollingId !== null}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="dataSource" className="text-xs">Data Source</Label>
+                    <Select
+                      value={dataSource}
+                      onValueChange={setDataSource}
+                      disabled={createAnalysis.isPending || pollingId !== null}
+                    >
+                      <SelectTrigger id="dataSource">
+                        <SelectValue placeholder="Select data source" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="TCGA">TCGA</SelectItem>
+                        <SelectItem value="ICGC">ICGC</SelectItem>
+                        <SelectItem value="Internal">Internal DB</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    className="w-full"
+                    disabled={createAnalysis.isPending || pollingId !== null || !sampleId.trim()}
+                  >
+                    {(createAnalysis.isPending || pollingId !== null) ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Running ML…</>
+                    ) : (
+                      "Run Demo Sample"
+                    )}
+                  </Button>
+
+                  {pollingId !== null && (
+                    <p className="text-xs text-center text-muted-foreground">
+                      Random Forest is classifying 50 biomarker genes…
+                    </p>
+                  )}
+                </form>
               </div>
             </CardContent>
           </Card>

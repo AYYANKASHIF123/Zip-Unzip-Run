@@ -641,6 +641,50 @@ components:
             type: string
         clinicalNotes:
           type: string
+        genesMissing:
+          type: integer
+          description: Count of the 50 model input genes not present in the uploaded/source data.
+        missingGenesList:
+          type: array
+          items:
+            type: string
+        imputationMethod:
+          type: string
+        dataQualityStatus:
+          type: string
+          enum: [complete, imputed, low-coverage]
+        modelVersion:
+          type: string
+        apiRequestId:
+          type: ["string", "null"]
+        contribution:
+          nullable: true
+          type: object
+          description: Per-sample explainability payload from the ML service (SHAP-inspired feature contributions).
+          properties:
+            sampleId:
+              type: string
+            predictedSubtype:
+              type: string
+            confidenceScore:
+              type: number
+            contributions:
+              type: array
+              items:
+                type: object
+                properties:
+                  gene:
+                    type: string
+                  importance:
+                    type: number
+                  scaledValue:
+                    type: number
+                  classMean:
+                    type: number
+                  contribution:
+                    type: number
+                  direction:
+                    type: string
 
     SubtypeProbability:
       type: object
