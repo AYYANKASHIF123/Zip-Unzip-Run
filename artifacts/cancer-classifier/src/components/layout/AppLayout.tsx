@@ -2,6 +2,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Link, useLocation } from "wouter";
 import { useRole, type Role } from "@/lib/role-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 import {
   Dna, LayoutDashboard, FileBarChart, Activity, DnaOff,
   Microscope, HeartPulse, FlaskConical, BookOpen, GitBranch,
@@ -10,86 +11,34 @@ import {
   Layers, Info, ShieldCheck, PlayCircle, ClipboardCheck, Rocket,
   Gauge, Users, Key, CreditCard, Building2, Share2, ShieldAlert,
   Smartphone, FileStack, Target, Scale, TrendingUp, Briefcase,
-  MessageSquareHeart, Presentation,
+  MessageSquareHeart, Presentation, ChevronDown, Workflow, FlaskRound,
+  Building,
 } from "lucide-react";
 
 const NAV_GROUPS = [
   {
-    label: "Overview",
+    label: "Core Workflow",
+    defaultOpen: true,
     items: [
-      { href: "/",         label: "Dashboard",        icon: LayoutDashboard },
-      { href: "/analyses", label: "Analyses",          icon: FileBarChart    },
+      { href: "/",           label: "Dashboard",        icon: LayoutDashboard },
+      { href: "/analyses",   label: "Analyses",         icon: FileBarChart    },
+      { href: "/datasets",   label: "Datasets",         icon: Database        },
+      { href: "/reports",    label: "Reports",          icon: FileText        },
+      { href: "/notifications", label: "Notifications", icon: Bell           },
+      { href: "/audit-logs", label: "Audit Logs",       icon: ClipboardList   },
     ],
   },
   {
-    label: "Platform",
+    label: "ML & Research",
+    defaultOpen: true,
     items: [
-      { href: "/overview",      label: "Project Overview", icon: Info        },
-      { href: "/roadmap",       label: "Roadmap",          icon: Map         },
-      { href: "/architecture",  label: "Architecture",     icon: Layers      },
-      { href: "/model-card",    label: "Model Card",       icon: ClipboardCheck },
-      { href: "/startup-vision",label: "Startup Vision",   icon: Rocket      },
-      { href: "/success-readiness", label: "Success Readiness", icon: Gauge  },
-    ],
-  },
-  {
-    label: "Startup Platform",
-    items: [
-      { href: "/workspaces",              label: "Workspaces",              icon: Users      },
-      { href: "/api-access",              label: "API Access",              icon: Key        },
-      { href: "/billing",                 label: "Billing & Plans",         icon: CreditCard },
-      { href: "/institutional-dashboard", label: "Institutional Dashboard", icon: Building2  },
-      { href: "/dataset-integration",     label: "Dataset Integration",     icon: Database   },
-    ],
-  },
-  {
-    label: "Advanced Research",
-    items: [
-      { href: "/multi-omics",          label: "Multi-Omics",          icon: Layers      },
-      { href: "/validation-pipeline",  label: "Validation Pipeline",  icon: ClipboardCheck },
-      { href: "/enterprise-deployment",label: "Enterprise Deployment",icon: ShieldCheck },
-      { href: "/gnn-preview",          label: "GNN Research Preview", icon: Network     },
-      { href: "/ppi-network",          label: "PPI Network",          icon: Share2      },
-      { href: "/federated-learning",   label: "Federated Learning",   icon: Network     },
-      { href: "/mobile-preview",       label: "Mobile Preview",       icon: Smartphone  },
-      { href: "/ehr-integration",      label: "EHR / FHIR Integration", icon: HeartPulse },
-      { href: "/research-paper",       label: "Research Paper",       icon: FileText    },
-    ],
-  },
-  {
-    label: "Startup Case",
-    items: [
-      { href: "/market-validation",     label: "Market Validation",     icon: Target    },
-      { href: "/pilot-program",         label: "Pilot Program",         icon: FlaskConical },
-      { href: "/competitive-analysis",  label: "Competitive Analysis",  icon: Scale     },
-      { href: "/go-to-market",          label: "Go-To-Market",          icon: TrendingUp },
-      { href: "/business-case",         label: "Business Case",         icon: Briefcase },
-      { href: "/risk-mitigation",       label: "Risk & Mitigation",     icon: ShieldAlert },
-      { href: "/feedback",              label: "Feedback",              icon: MessageSquareHeart },
-      { href: "/case-studies",          label: "Case Studies",          icon: FileStack },
-      { href: "/investor-summary",      label: "Investor Summary",      icon: Presentation },
-    ],
-  },
-  {
-    label: "Genomics",
-    items: [
-      { href: "/genomics",   label: "Genomics Explorer", icon: Microscope  },
-      { href: "/survival",   label: "Survival Analysis", icon: HeartPulse  },
-      { href: "/genes",      label: "Gene Library",      icon: BookOpen    },
-      { href: "/biomarkers", label: "Biomarkers",        icon: DnaOff      },
-      { href: "/pathways",   label: "Pathway Analysis",  icon: GitBranch   },
-    ],
-  },
-  {
-    label: "Clinical",
-    items: [
-      { href: "/drugs",      label: "Drug Sensitivity",  icon: FlaskConical },
-      { href: "/comparison", label: "Sample Comparison", icon: GitCompare   },
-    ],
-  },
-  {
-    label: "AI & Models",
-    items: [
+      { href: "/genomics",          label: "Genomics Explorer", icon: Microscope  },
+      { href: "/survival",          label: "Survival Analysis", icon: HeartPulse  },
+      { href: "/genes",             label: "Gene Library",      icon: BookOpen    },
+      { href: "/biomarkers",        label: "Biomarkers",        icon: DnaOff      },
+      { href: "/pathways",          label: "Pathway Analysis",  icon: GitBranch   },
+      { href: "/drugs",             label: "Drug Sensitivity",  icon: FlaskConical },
+      { href: "/comparison",        label: "Sample Comparison", icon: GitCompare   },
       { href: "/model-performance", label: "Model Performance", icon: Activity     },
       { href: "/model-comparison",  label: "Model Comparison",  icon: BarChart3   },
       { href: "/model-training",    label: "Model Training",    icon: PlayCircle  },
@@ -98,18 +47,51 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: "Data",
+    label: "Startup & Admin",
+    defaultOpen: false,
     items: [
-      { href: "/datasets", label: "Datasets", icon: Database },
+      { href: "/overview",                label: "Project Overview",        icon: Info        },
+      { href: "/roadmap",                 label: "Roadmap",                 icon: Map         },
+      { href: "/architecture",            label: "Architecture",            icon: Layers      },
+      { href: "/model-card",              label: "Model Card",              icon: ClipboardCheck },
+      { href: "/startup-vision",          label: "Startup Vision",          icon: Rocket      },
+      { href: "/success-readiness",       label: "Success Readiness",       icon: Gauge       },
+      { href: "/workspaces",              label: "Workspaces",              icon: Users       },
+      { href: "/api-access",              label: "API Access",              icon: Key         },
+      { href: "/billing",                 label: "Billing & Plans",         icon: CreditCard  },
+      { href: "/institutional-dashboard", label: "Institutional Dashboard", icon: Building2   },
+      { href: "/dataset-integration",     label: "Dataset Integration",     icon: Workflow    },
+      { href: "/market-validation",       label: "Market Validation",       icon: Target      },
+      { href: "/pilot-program",           label: "Pilot Program",           icon: FlaskRound  },
+      { href: "/competitive-analysis",    label: "Competitive Analysis",    icon: Scale       },
+      { href: "/go-to-market",            label: "Go-To-Market",            icon: TrendingUp  },
+      { href: "/business-case",           label: "Business Case",           icon: Briefcase   },
+      { href: "/risk-mitigation",         label: "Risk & Mitigation",       icon: ShieldAlert },
+      { href: "/feedback",                label: "Feedback",                icon: MessageSquareHeart },
+      { href: "/case-studies",            label: "Case Studies",            icon: FileStack   },
+      { href: "/investor-summary",        label: "Investor Summary",        icon: Presentation },
     ],
   },
   {
-    label: "System",
+    label: "Advanced Research Preview",
+    defaultOpen: false,
     items: [
-      { href: "/reports",       label: "Reports",       icon: FileText      },
-      { href: "/notifications", label: "Notifications", icon: Bell          },
-      { href: "/audit-logs",   label: "Audit Logs",    icon: ClipboardList },
-      { href: "/settings",     label: "Settings",      icon: Settings      },
+      { href: "/multi-omics",           label: "Multi-Omics",            icon: Layers      },
+      { href: "/validation-pipeline",   label: "Validation Pipeline",    icon: ClipboardCheck },
+      { href: "/enterprise-deployment", label: "Enterprise Deployment",  icon: Building    },
+      { href: "/gnn-preview",           label: "GNN Research Preview",  icon: Network     },
+      { href: "/ppi-network",           label: "PPI Network",           icon: Share2      },
+      { href: "/federated-learning",    label: "Federated Learning",    icon: Network     },
+      { href: "/mobile-preview",        label: "Mobile Preview",        icon: Smartphone  },
+      { href: "/ehr-integration",       label: "EHR / FHIR Integration",icon: HeartPulse   },
+      { href: "/research-paper",        label: "Research Paper",        icon: FileText     },
+    ],
+  },
+  {
+    label: "Settings",
+    defaultOpen: true,
+    items: [
+      { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
@@ -117,11 +99,20 @@ const NAV_GROUPS = [
 export function AppSidebar() {
   const [location] = useLocation();
   const { role, setRole, user } = useRole();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(NAV_GROUPS.map(g => [g.label, g.defaultOpen]))
+  );
 
   const isActive = (href: string) =>
     href === "/"
       ? location === "/"
       : location === href || (href === "/analyses" && location.startsWith("/results"));
+
+  const groupHasActiveItem = (group: typeof NAV_GROUPS[number]) =>
+    group.items.some(item => isActive(item.href));
+
+  const toggleGroup = (label: string) =>
+    setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
 
   return (
     <Sidebar className="border-r border-sidebar-border" variant="sidebar" collapsible="none">
@@ -130,27 +121,37 @@ export function AppSidebar() {
           <Dna className="h-6 w-6 text-sidebar-primary shrink-0" />
           <span className="truncate">GeneClassifier</span>
         </div>
-        {NAV_GROUPS.map(group => (
-          <SidebarGroup key={group.label}>
-            <SidebarGroupLabel className="text-xs uppercase tracking-wider text-sidebar-foreground/50 px-3 py-1.5">
-              {group.label}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {group.items.map(link => (
-                  <SidebarMenuItem key={link.href}>
-                    <SidebarMenuButton asChild isActive={isActive(link.href)}>
-                      <Link href={link.href} className="flex items-center gap-2">
-                        <link.icon className="h-4 w-4 shrink-0" />
-                        <span>{link.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
+        {NAV_GROUPS.map(group => {
+          const isOpen = openGroups[group.label] || groupHasActiveItem(group);
+          return (
+            <SidebarGroup key={group.label}>
+              <button
+                type="button"
+                onClick={() => toggleGroup(group.label)}
+                className="w-full flex items-center justify-between px-3 py-1.5 text-xs uppercase tracking-wider text-sidebar-foreground/50 hover:text-sidebar-foreground/80 transition-colors"
+              >
+                <span>{group.label}</span>
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${isOpen ? "" : "-rotate-90"}`} />
+              </button>
+              {isOpen && (
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {group.items.map(link => (
+                      <SidebarMenuItem key={link.href}>
+                        <SidebarMenuButton asChild isActive={isActive(link.href)}>
+                          <Link href={link.href} className="flex items-center gap-2">
+                            <link.icon className="h-4 w-4 shrink-0" />
+                            <span>{link.label}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2">

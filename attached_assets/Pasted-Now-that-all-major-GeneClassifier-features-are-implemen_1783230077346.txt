@@ -1,0 +1,149 @@
+Now that all major GeneClassifier features are implemented, I want to polish the UI/UX professionally.
+
+Do not create a new project.
+Do not remove existing features.
+Do not add unnecessary new modules.
+Focus only on improving design, layout, navigation, readability, and demo experience.
+
+Main goal:
+Make the app look like a polished FYP, startup prototype, and AI genomics research platform.
+
+UI/UX improvements required:
+
+1. Improve sidebar navigation.
+Group pages into clear sections:
+- Core Workflow
+- ML & Research
+- Startup & Admin
+- Advanced Research Preview
+- Settings
+
+Make the sidebar less cluttered and easier to navigate.
+
+2. Improve Dashboard UI.
+Add strong top KPI cards:
+- Total Analyses
+- Average Confidence
+- Active Model Version
+- Model Accuracy
+- System Health
+
+Add a clear primary CTA:
+“Upload Gene Expression CSV”
+
+Show:
+- recent analyses
+- subtype distribution
+- quick demo sample
+- system health status
+
+3. Improve Results page.
+Make this the most polished page.
+
+Add a strong prediction summary card:
+- predicted subtype
+- confidence score
+- confidence label
+- data quality score
+- model version
+- timestamp
+
+Improve layout for:
+- subtype probability chart
+- matched/missing genes
+- top contributing genes
+- PDF report export
+- research-use-only disclaimer
+
+4. Improve Roadmap page.
+Make it visually impressive with:
+- timeline layout
+- phase cards
+- progress bars
+- completed badges
+- prototype/research-preview labels
+- clean bottom cards for current focus, funding, revenue model, and startup readiness
+
+5. Improve Success Readiness Dashboard.
+Use professional cards and progress bars for:
+- FYP Readiness
+- Demo Reliability
+- Startup Prototype Readiness
+- Research Lab Pilot Potential
+- SaaS Readiness
+- Clinical Deployment Readiness
+
+Clearly show that these are readiness estimates, not guarantees.
+
+6. Improve page headers.
+Every page should have:
+- clear title
+- short subtitle
+- status badge if needed
+- primary action button where relevant
+
+7. Improve empty states.
+Add clean empty states such as:
+“No analyses yet. Upload a sample to begin.”
+
+8. Improve loading states.
+Add skeleton loaders or clean loading messages for:
+- dashboard metrics
+- analyses table
+- results page
+- charts
+- reports
+
+9. Improve error states.
+If API, ML service, or database fails, show clean messages:
+- Retry
+- Run Demo Sample
+- Check System Status
+
+Do not show raw technical errors to users.
+
+10. Improve badges and labels.
+Use consistent badges:
+- Completed
+- Prototype
+- Demo
+- Research Preview
+- Not Clinically Validated
+- High Confidence
+- Moderate Confidence
+- Low Confidence
+- Admin Only
+
+11. Improve charts.
+Make charts more readable:
+- clear labels
+- legends
+- tooltips
+- consistent sizing
+- no overcrowding
+
+12. Improve mobile responsiveness.
+Make sure dashboard, results, roadmap, and upload flow look acceptable on laptop, tablet, and mobile widths.
+
+13. Improve visual consistency.
+Use consistent:
+- spacing
+- card radius
+- button styles
+- typography
+- colors
+- icons
+- table design
+
+14. Improve demo flow.
+Add visible buttons/links for:
+Dashboard → Upload CSV → Validate → Predict → Results → Explainable AI → Export Report
+
+Make the main demo journey obvious.
+
+15. Keep the app professional.
+Avoid too many colors, too many animations, or overly flashy design.
+Make it clean, modern, and credible for an FYP viva and startup presentation.
+
+Final goal:
+The app should feel polished, reliable, easy to present, and visually strong without changing the core functionality.
