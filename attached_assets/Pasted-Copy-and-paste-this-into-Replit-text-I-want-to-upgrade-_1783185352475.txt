@@ -1,0 +1,789 @@
+Copy and paste this into Replit:
+
+```text
+I want to upgrade my existing GeneClassifier app so it looks stronger as an FYP, startup prototype, research lab pilot, and future SaaS platform.
+
+Important:
+Do not create a new project.
+Work inside the existing GeneClassifier app.
+Do not remove existing pages or features.
+Do not make false clinical claims.
+Do not present prototype features as real clinical deployment.
+If a feature is not fully production-ready, clearly label it as “Prototype”, “Demo”, “Research Preview”, or “Production Planned”.
+
+Main goal:
+I want the app to look like a serious AI genomics research platform with a startup success/readiness chance of around 60–80% for research lab pilot / prototype adoption, not clinical medical approval.
+
+Very important wording:
+Do not show “Guaranteed startup success”.
+Instead, show:
+- Startup Readiness Score
+- Research Pilot Readiness
+- Commercial Prototype Readiness
+- Lab Adoption Potential
+- Market Validation Score
+
+Target scores to display:
+- FYP Readiness: 95%
+- Demo Reliability: 90%
+- Startup Prototype Readiness: 80%
+- Research Lab Pilot Potential: 65–75%
+- SaaS Readiness: 60–70%
+- Clinical Deployment Readiness: 20–30%
+
+Make it clear:
+Clinical deployment is lower because real clinical validation, regulatory approval, privacy compliance, and medical partnerships are still required.
+
+Add a new page called:
+“Success Readiness Dashboard”
+
+This page should show the project’s chances/readiness in a professional way.
+
+Add cards:
+
+1. FYP Success Readiness
+Score: 95%
+Reason:
+The app has complete UI, CSV upload, validation, ML prediction, explainability, reporting, model evaluation, roadmap, architecture, and presentation mode.
+
+2. Startup Prototype Readiness
+Score: 80%
+Reason:
+The app includes product-style features such as authentication prototype, workspaces, billing preview, API access, institutional dashboard, report export, roadmap, and startup positioning.
+
+3. Research Lab Pilot Potential
+Score: 70%
+Reason:
+The platform supports gene expression upload, batch prediction, external validation preview, model performance, explainable AI, cohort analytics, and report exports.
+
+4. SaaS Readiness
+Score: 65%
+Reason:
+The app has plans/pricing preview, API keys, usage limits, workspace support, report history, admin analytics, and deployment readiness.
+
+5. Clinical Deployment Readiness
+Score: 25%
+Reason:
+The platform is not clinically validated yet. Clinical use would require external validation, real patient/lab datasets, privacy compliance, regulatory review, and clinical partnerships.
+
+Add a note:
+“These scores represent prototype readiness and presentation strength, not guaranteed commercial or clinical success.”
+
+Add a visual score breakdown:
+- Product completeness
+- Technical completeness
+- ML credibility
+- Research value
+- Demo reliability
+- Market potential
+- Compliance readiness
+- Clinical validation status
+
+Add radar chart or progress bars if possible.
+
+Add recommendations to improve the scores:
+- Real external TCGA/GEO validation
+- Real cloud deployment
+- Research lab feedback
+- Published FYP manuscript
+- Pilot testing with university lab
+- Stronger privacy/compliance design
+- More real datasets
+- Better SHAP integration
+- More batch/cohort analytics
+- API documentation
+
+Now upgrade the Roadmap and platform so Phase 3 and Phase 4 are shown as completed at prototype/demo level.
+
+Update the Roadmap page so:
+
+Phase 1: Final Year Project Prototype
+Status: Completed — Jan 2026
+Progress: 100%
+
+Phase 2: Research Platform
+Status: Completed — Jun 2026
+Progress: 100%
+
+Phase 3: Startup MVP Prototype
+Status: Completed — Q1 2027 Prototype
+Progress: 100%
+
+Phase 4: Advanced Product Research Preview
+Status: Completed — 2028+ Research Preview
+Progress: 100%
+
+Do not present Phase 3 and Phase 4 as fully real clinical/commercial deployments. Present them as completed prototype modules.
+
+PHASE 3: STARTUP MVP PROTOTYPE FEATURES TO IMPLEMENT / SHOW AS COMPLETED
+
+1. Real User Authentication
+
+Add a working authentication-style system.
+If Replit Auth or Clerk is available, integrate it.
+If not, create a clean prototype login system with demo users.
+
+Demo users:
+- Admin
+- Researcher
+- Viewer
+- Lab Manager
+
+Each role should have different permissions.
+
+2. Team Workspaces
+
+Add a Workspaces page.
+
+Features:
+- create/select workspace
+- workspace name
+- members list
+- member role
+- number of analyses
+- number of reports
+- recent activity
+- lab/institution name
+
+Example workspaces:
+- University Research Lab
+- Oncology Genomics Team
+- Demo Cancer Research Group
+
+3. Cloud Database Readiness
+
+Add a Cloud Database section in Settings or Architecture.
+
+Show:
+- current database mode
+- PostgreSQL support
+- Neon/Supabase ready
+- environment variable configuration
+- backup status
+- migration status
+
+If the current app uses local or Replit database, label it honestly:
+“Current prototype database. Cloud PostgreSQL ready through environment configuration.”
+
+4. External API Access Tier
+
+Add an API Access page.
+
+Features:
+- API keys table
+- create/revoke demo API key
+- usage count
+- rate limit
+- endpoint list
+- API documentation
+- request/response examples
+
+Show endpoints:
+- POST /api/analyses
+- GET /api/analyses/:id
+- POST /ml/predict
+- GET /api/reports/:id
+- GET /api/model-card
+- GET /api/genes
+- GET /api/workspaces
+
+Add rate limit display:
+- Free: 50 requests/day
+- Researcher: 1,000 requests/month
+- Lab: 10,000 requests/month
+- Enterprise: custom
+
+5. Paid Research Accounts and Billing
+
+Add a Billing or Plans page.
+
+Plans:
+- Free Student
+- Researcher
+- Lab
+- Enterprise
+
+Show:
+- price
+- usage limits
+- dataset access
+- report exports
+- API access
+- team workspace
+- support level
+
+Important:
+This should be a prototype billing UI only.
+Label it:
+“Billing prototype — payment integration planned for production.”
+
+6. Institutional Dashboard
+
+Add an Institutional Dashboard page.
+
+Features:
+- total workspace analyses
+- active researchers
+- reports generated
+- average confidence
+- model usage
+- dataset usage
+- recent team activity
+- failed analyses
+- storage usage
+
+7. PDF Report Export
+
+If PDF export already exists, polish it.
+If not, implement it.
+
+PDF report should include:
+- GeneClassifier logo/name
+- sample ID
+- predicted subtype
+- confidence score
+- probability breakdown
+- top contributing genes
+- matched/missing genes
+- model version
+- dataset note
+- timestamp
+- research disclaimer
+
+8. WebSocket Real-Time Pipeline Updates
+
+Add real-time or simulated real-time pipeline updates.
+
+Show these pipeline stages:
+- Data Ingestion
+- Quality Control
+- Normalisation
+- Feature Extraction
+- Model Inference
+- Results Storage
+
+Each stage should update visually:
+Queued → Processing → Completed
+
+If actual WebSocket is difficult, create a prototype real-time event system and label it:
+“Real-time prototype pipeline updates.”
+
+9. TCGA / GEO Live Dataset Integration Preview
+
+Add a Dataset Integration page.
+
+Features:
+- TCGA dataset card
+- GEO dataset card
+- CCLE dataset card
+- COSMIC dataset card
+- ICGC dataset card
+- status: Connected / Demo / Planned
+- last sync time
+- sample count
+- gene count
+- cancer types
+
+Important:
+If not actually connected to live TCGA/GEO, label it:
+“Demo metadata integration. Live data sync planned for production.”
+
+10. Docker Containerisation + CI/CD
+
+Add a Deployment page or section in Architecture.
+
+Show:
+- Docker-ready frontend
+- Docker-ready API
+- Docker-ready ML service
+- PostgreSQL service
+- CI/CD checklist
+- environment variables
+- deployment targets
+
+Add checklist:
+- Dockerfile prepared
+- docker-compose architecture documented
+- environment variables listed
+- production build command
+- health checks
+- deployment notes
+
+PHASE 4: ADVANCED PRODUCT RESEARCH PREVIEW FEATURES TO IMPLEMENT / SHOW AS COMPLETED
+
+1. Multi-Omics Integration
+
+Add a Multi-Omics page.
+
+Show support for:
+- RNA-seq gene expression
+- DNA mutation profile
+- methylation data
+- ATAC-seq accessibility
+- proteomics
+
+Add upload tabs:
+- RNA Expression CSV
+- Mutation CSV
+- Methylation CSV
+- Proteomics CSV
+
+For prototype, allow demo datasets and show combined result summary.
+
+Label clearly:
+“Multi-omics research preview. Prototype supports demo data fusion.”
+
+2. External Dataset Validation Pipeline
+
+Add a Validation Pipeline page.
+
+Features:
+- upload external validation dataset
+- validate required columns
+- check cancer subtype labels
+- run batch prediction
+- calculate accuracy
+- calculate F1-score
+- calculate confusion matrix
+- export validation report
+
+If full ML evaluation is not available, create a realistic prototype using existing model metrics and clearly label it as prototype validation.
+
+3. Enterprise On-Premise Deployment Package
+
+Add an Enterprise Deployment page.
+
+Show:
+- on-premise architecture
+- private database
+- local ML inference
+- no external data transfer
+- admin controls
+- audit logs
+- backup strategy
+- deployment checklist
+
+Add architecture diagram/card style:
+Frontend → API → ML Service → Private PostgreSQL → Audit Logs
+
+4. GNN Model with Real PPI Graph Features
+
+Add a GNN Research Preview page.
+
+Purpose:
+Show future/advanced model using protein-protein interaction graph features.
+
+Features:
+- model type: Graph Neural Network
+- input: gene expression + PPI graph
+- graph nodes: genes/proteins
+- graph edges: protein interactions
+- output: subtype prediction
+- comparison with Random Forest
+- research status
+- limitations
+
+Important:
+If GNN is not actually trained, label it:
+“GNN research preview. Not active production model.”
+
+5. PPI Network Graph Visualisation
+
+Add a PPI Network page.
+
+Features:
+- interactive or static network graph
+- genes as nodes
+- interactions as edges
+- highlight top contributing genes
+- filter by subtype
+- show central genes
+- show pathway clusters
+
+Use example genes:
+EGFR, ERBB2, TP53, BRCA1, AR, KRAS, PIK3CA, PTEN, MYC, CDKN2A
+
+6. Lab Collaboration Tools
+
+Improve Workspaces with collaboration features.
+
+Add:
+- comments on analysis
+- assign analysis to team member
+- analysis status: review pending, reviewed, archived
+- shared reports
+- workspace activity feed
+- user mentions in prototype form
+
+7. Federated Learning Research Preview
+
+Add a Federated Learning page.
+
+Explain:
+- multiple labs can train locally
+- raw data stays private
+- model updates are aggregated
+- improves privacy
+- useful for sensitive genomics data
+
+Show demo flow:
+Lab A local training
+Lab B local training
+Lab C local training
+Secure aggregation
+Global model update
+
+Label:
+“Federated learning prototype simulation for research demonstration.”
+
+8. Mobile Companion App Preview
+
+Add a Mobile Preview page.
+
+Show:
+- mobile result cards
+- sample status
+- report review
+- notification preview
+- confidence summary
+- approve/review result button
+
+This can be a responsive web/mobile preview, not a separate real mobile app.
+
+9. EHR / FHIR Integration Preview
+
+Add an EHR Integration page.
+
+Show:
+- FHIR-ready data mapping
+- patient/sample ID mapping
+- observation resource
+- diagnostic report resource
+- privacy warning
+- clinical validation required
+
+Important:
+Do not claim real hospital integration.
+Label it:
+“FHIR integration preview. Not connected to real EHR systems.”
+
+10. Published Research Paper Page
+
+Add a Research Paper page.
+
+Include:
+- paper title
+- abstract
+- methodology
+- model architecture
+- dataset description
+- results summary
+- limitations
+- future work
+- export as PDF button if possible
+
+Use title:
+“GeneClassifier: An Explainable AI Platform for Cancer Subtype Classification Using Gene Expression Profiles”
+
+Make it look like an FYP research paper summary, not a real published journal paper.
+Label:
+“FYP research manuscript draft.”
+
+EXTRA FEATURES TO RAISE SUCCESS / READINESS CHANCE TOWARD 60–80%
+
+1. Market Validation Page
+
+Add a Market Validation page.
+
+Show:
+- target users
+- pain points
+- current alternatives
+- why GeneClassifier is different
+- early adopter profile
+- pilot program plan
+- adoption barriers
+- validation status
+
+Target users:
+- university genomics researchers
+- cancer biology labs
+- bioinformatics students
+- oncology research departments
+- biotech research teams
+
+Add a score:
+“Market Validation Readiness: 65%”
+
+Explain:
+This is based on prototype completeness, research use case clarity, pricing model, and pilot-readiness.
+
+2. Pilot Program Page
+
+Add a Research Pilot Program page.
+
+Include:
+- 8-week pilot plan
+- target: 1–3 university or research labs
+- onboarding process
+- success metrics
+- feedback collection
+- dataset testing
+- report quality review
+- API usage testing
+- final pilot report
+
+Pilot success metrics:
+- 100+ demo/sample analyses completed
+- 80%+ successful CSV validation rate
+- less than 5% failed predictions
+- user satisfaction score above 4/5
+- at least 3 useful researcher feedback points
+- at least 1 external validation dataset tested
+
+Add score:
+“Pilot Readiness: 70%”
+
+3. Competitive Analysis Page
+
+Add a Competitive Analysis page.
+
+Compare GeneClassifier with:
+- manual bioinformatics workflow
+- generic ML notebooks
+- existing genomics portals
+- research dashboards
+- clinical decision systems
+
+Comparison criteria:
+- ease of use
+- explainability
+- report export
+- batch prediction
+- team workspace
+- API access
+- model governance
+- startup readiness
+
+Add conclusion:
+“GeneClassifier’s strength is not only prediction, but the complete research workflow around prediction.”
+
+4. Go-To-Market Page
+
+Add a Go-To-Market Strategy page.
+
+Include:
+- first target market: universities and research labs
+- first users: students, bioinformatics researchers, genomics teams
+- entry strategy: free student/demo accounts
+- pilot strategy: offer research lab pilot access
+- growth strategy: convert labs into paid team plans
+- long-term strategy: enterprise/on-premise research deployment
+
+Add score:
+“Go-To-Market Readiness: 65%”
+
+5. Business Case Page
+
+Add a Business Case page.
+
+Include:
+- problem
+- solution
+- target users
+- pricing
+- expected use cases
+- cost assumptions
+- revenue model
+- risks
+- mitigation plan
+
+Add startup readiness statement:
+“With real external validation and pilot feedback, this prototype could reach 60–80% readiness for research-lab pilot adoption.”
+
+6. Risk and Mitigation Page
+
+Add a Risk & Mitigation page.
+
+Show risks:
+- limited real-world dataset validation
+- clinical regulation complexity
+- privacy concerns
+- model generalization risk
+- competition from existing bioinformatics tools
+- slow healthcare adoption
+- technical deployment complexity
+
+Show mitigation:
+- research-use-only positioning
+- external validation pipeline
+- anonymized sample IDs
+- audit logs
+- role-based access
+- pilot program
+- cloud and on-prem deployment options
+- clear disclaimers
+
+7. Adoption Readiness Score
+
+Add an Adoption Readiness Score component.
+
+Formula-style categories:
+- Product completeness: 90%
+- Demo reliability: 90%
+- ML validation: 65%
+- Dataset transparency: 70%
+- Research workflow value: 80%
+- SaaS infrastructure readiness: 65%
+- Compliance readiness: 45%
+- Market validation: 60%
+
+Overall:
+“Research Pilot Adoption Readiness: 70%”
+
+Important:
+Do not call this “success guarantee”.
+Call it “readiness estimate”.
+
+8. User Feedback Module
+
+Add a Feedback page.
+
+Features:
+- submit feedback
+- rate prediction workflow
+- rate report usefulness
+- rate UI clarity
+- suggest missing features
+- mark as researcher/student/admin feedback
+- feedback table for admin
+
+This helps support the 60–80% pilot-readiness claim.
+
+9. Case Study Page
+
+Add a Demo Case Study page.
+
+Include:
+- sample uploaded
+- validation result
+- prediction result
+- confidence score
+- top contributing genes
+- report generated
+- interpretation
+- limitation note
+
+Add 3 case studies:
+- BRCA demo sample
+- LUAD demo sample
+- GBM demo sample
+
+10. Investor / Examiner Summary Page
+
+Add a one-page summary called:
+“Why This Can Become a Startup”
+
+Include:
+- strong research problem
+- clear workflow
+- working prototype
+- future SaaS model
+- API potential
+- team workspace potential
+- research pilot plan
+- validation roadmap
+- realistic 60–80% prototype/pilot readiness target
+- clinical validation still required
+
+Update Roadmap Text
+
+Change Phase 3 title to:
+“Phase 3: Startup MVP Prototype”
+
+Subtitle:
+“Authentication, cloud-readiness, team workspaces, API access, billing prototype”
+
+Mark:
+10 / 10 complete
+100%
+
+Completed items:
+- Real user authentication and role permissions
+- Team workspaces and collaboration
+- Cloud PostgreSQL readiness
+- External API access with rate limiting
+- Paid research account and billing prototype
+- Institutional dashboard for multi-lab usage
+- PDF report export
+- Real-time pipeline updates
+- TCGA / GEO dataset integration preview
+- Docker + CI/CD deployment readiness
+
+Change Phase 4 title to:
+“Phase 4: Advanced Product Research Preview”
+
+Subtitle:
+“Multi-omics, PPI networks, federated learning, enterprise deployment”
+
+Mark:
+10 / 10 complete
+100%
+
+Completed items:
+- Multi-omics integration preview
+- External validation pipeline
+- Enterprise on-premise deployment package
+- GNN model research preview
+- PPI network graph visualisation
+- Lab collaboration tools
+- Federated learning simulation
+- Mobile companion preview
+- EHR / FHIR integration preview
+- FYP research manuscript draft
+
+Add a note under Phase 4:
+“Advanced modules are implemented as research-preview prototypes and require real clinical validation before production use.”
+
+Update Bottom Cards
+
+Replace Current Focus with:
+
+Current Focus:
+The platform is now complete at FYP prototype level with startup MVP and advanced research-preview modules. The main working flow includes CSV upload, validation, cancer subtype prediction, explainable AI, report export, model evaluation, team workspace, API access preview, and advanced multi-omics roadmap modules.
+
+Replace Funding Strategy with:
+
+Funding Strategy:
+The next stage would focus on real-world validation, cloud deployment, university incubation, research partnerships, and healthcare innovation grants. Potential support routes include academic spinout funding, cancer research innovation programs, and precision medicine startup accelerators.
+
+Replace Revenue Model with:
+
+Revenue Model:
+- Free: student/demo accounts
+- Researcher: individual research access
+- Lab: workspace, reports, API access
+- Institution: multi-lab dashboard and support
+- Enterprise: on-premise deployment and SLA
+
+Add note:
+“Research-use only. Clinical deployment would require validation, compliance, and regulatory approval.”
+
+Add a fourth bottom card:
+
+Startup Readiness:
+The platform has strong prototype readiness for research-lab pilot adoption. Current estimated readiness is 70–80% for pilot/demo adoption, based on product completeness, workflow clarity, demo reliability, reporting, API preview, workspaces, and validation roadmap. This is not a guarantee of commercial success.
+
+Final requirements:
+- Roadmap should visually show Phase 3 and Phase 4 as completed.
+- Add the required pages/modules or prototype sections behind these roadmap items.
+- Add the new Success Readiness Dashboard.
+- Show startup/research pilot readiness between 60–80%.
+- Keep clinical deployment readiness lower and honest.
+- Keep all medical claims safe.
+- Use labels like Prototype, Research Preview, Demo, or Planned for Production where needed.
+- Make the UI clean, professional, and suitable for FYP viva and startup discussion.
+- Do not claim the platform diagnoses cancer.
+- Use this wording:
+“AI-powered research support platform for cancer subtype classification from gene expression data.”
+```

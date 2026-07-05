@@ -8,6 +8,9 @@ import {
   Cpu, FileText, Bell, Database, GitCompare,
   Sparkles, BarChart3, Network, Map, Settings, ClipboardList,
   Layers, Info, ShieldCheck, PlayCircle, ClipboardCheck, Rocket,
+  Gauge, Users, Key, CreditCard, Building2, Share2, ShieldAlert,
+  Smartphone, FileStack, Target, Scale, TrendingUp, Briefcase,
+  MessageSquareHeart, Presentation,
 } from "lucide-react";
 
 const NAV_GROUPS = [
@@ -26,6 +29,45 @@ const NAV_GROUPS = [
       { href: "/architecture",  label: "Architecture",     icon: Layers      },
       { href: "/model-card",    label: "Model Card",       icon: ClipboardCheck },
       { href: "/startup-vision",label: "Startup Vision",   icon: Rocket      },
+      { href: "/success-readiness", label: "Success Readiness", icon: Gauge  },
+    ],
+  },
+  {
+    label: "Startup Platform",
+    items: [
+      { href: "/workspaces",              label: "Workspaces",              icon: Users      },
+      { href: "/api-access",              label: "API Access",              icon: Key        },
+      { href: "/billing",                 label: "Billing & Plans",         icon: CreditCard },
+      { href: "/institutional-dashboard", label: "Institutional Dashboard", icon: Building2  },
+      { href: "/dataset-integration",     label: "Dataset Integration",     icon: Database   },
+    ],
+  },
+  {
+    label: "Advanced Research",
+    items: [
+      { href: "/multi-omics",          label: "Multi-Omics",          icon: Layers      },
+      { href: "/validation-pipeline",  label: "Validation Pipeline",  icon: ClipboardCheck },
+      { href: "/enterprise-deployment",label: "Enterprise Deployment",icon: ShieldCheck },
+      { href: "/gnn-preview",          label: "GNN Research Preview", icon: Network     },
+      { href: "/ppi-network",          label: "PPI Network",          icon: Share2      },
+      { href: "/federated-learning",   label: "Federated Learning",   icon: Network     },
+      { href: "/mobile-preview",       label: "Mobile Preview",       icon: Smartphone  },
+      { href: "/ehr-integration",      label: "EHR / FHIR Integration", icon: HeartPulse },
+      { href: "/research-paper",       label: "Research Paper",       icon: FileText    },
+    ],
+  },
+  {
+    label: "Startup Case",
+    items: [
+      { href: "/market-validation",     label: "Market Validation",     icon: Target    },
+      { href: "/pilot-program",         label: "Pilot Program",         icon: FlaskConical },
+      { href: "/competitive-analysis",  label: "Competitive Analysis",  icon: Scale     },
+      { href: "/go-to-market",          label: "Go-To-Market",          icon: TrendingUp },
+      { href: "/business-case",         label: "Business Case",         icon: Briefcase },
+      { href: "/risk-mitigation",       label: "Risk & Mitigation",     icon: ShieldAlert },
+      { href: "/feedback",              label: "Feedback",              icon: MessageSquareHeart },
+      { href: "/case-studies",          label: "Case Studies",          icon: FileStack },
+      { href: "/investor-summary",      label: "Investor Summary",      icon: Presentation },
     ],
   },
   {

@@ -1,10 +1,31 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { PrototypeBanner } from "@/components/shared/PrototypeBanner";
 import {
   Code2, Server, Database, Brain, Layers, Shield, Cloud,
-  ArrowDown, Network, Zap, Globe,
+  ArrowDown, Network, Zap, Globe, Container, CheckCircle2, HardDrive,
 } from "lucide-react";
+
+const DOCKER_CICD_CHECKLIST = [
+  "Dockerfile prepared for frontend (Vite build → static serve)",
+  "Dockerfile prepared for API server (Node/Express)",
+  "Dockerfile prepared for ML service (Python/FastAPI)",
+  "docker-compose architecture documented (frontend + API + ML + PostgreSQL)",
+  "Environment variables listed (DATABASE_URL, SESSION_SECRET, PORT, BASE_PATH)",
+  "Production build command defined per service",
+  "Health check endpoints defined per service",
+  "Deployment notes documented for cloud and on-premise targets",
+];
+
+const CLOUD_DB_STATUS = [
+  { label: "Current database mode", value: "Replit-managed PostgreSQL (prototype)" },
+  { label: "PostgreSQL support", value: "Yes — Drizzle ORM, schema-first migrations" },
+  { label: "Neon / Supabase ready", value: "Yes — via DATABASE_URL environment configuration" },
+  { label: "Environment variable configuration", value: "DATABASE_URL, SESSION_SECRET" },
+  { label: "Backup status", value: "Managed by Replit checkpoints (prototype) — automated cloud backups planned for production" },
+  { label: "Migration status", value: "Up to date via `pnpm --filter @workspace/db run push`" },
+];
 
 const LAYERS = [
   {
@@ -178,6 +199,45 @@ export default function Architecture() {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        <Separator />
+
+        <div>
+          <h2 className="text-lg font-bold mb-2 flex items-center gap-2"><HardDrive className="w-4 h-4" /> Cloud Database Readiness</h2>
+          <PrototypeBanner text="Current prototype database. Cloud PostgreSQL ready through environment configuration — no code changes required to point at Neon, Supabase, or another managed Postgres provider." />
+          <Card className="border-border/60 mt-3">
+            <CardContent className="pt-4 pb-4 space-y-2">
+              {CLOUD_DB_STATUS.map(s => (
+                <div key={s.label} className="flex flex-col md:flex-row md:items-center md:justify-between gap-1 text-xs bg-secondary/30 rounded-md px-3 py-2">
+                  <span className="font-medium">{s.label}</span>
+                  <span className="text-muted-foreground">{s.value}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-bold mb-2 flex items-center gap-2"><Container className="w-4 h-4" /> Docker Containerisation + CI/CD</h2>
+          <PrototypeBanner text="Deployment package documents the intended containerisation and CI/CD strategy. No live Docker/CI pipeline is executing inside this Replit environment." />
+          <Card className="border-border/60 mt-3">
+            <CardContent className="pt-4 pb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                {DOCKER_CICD_CHECKLIST.map(c => (
+                  <div key={c} className="flex items-start gap-2 text-xs bg-secondary/30 rounded-md px-3 py-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0 mt-0.5" /> {c}
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-0">Frontend — Docker-ready</Badge>
+                <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border-0">API — Docker-ready</Badge>
+                <Badge className="bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 border-0">ML Service — Docker-ready</Badge>
+                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 border-0">PostgreSQL — Service documented</Badge>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
