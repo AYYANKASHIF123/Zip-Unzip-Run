@@ -54,7 +54,7 @@ async def _parse_csv(file: UploadFile) -> pd.DataFrame:
 def health():
     return {
         "status":   "ok",
-        "model":    "RandomForest v1.0",
+        "model":    "HistGradientBoosting v2.0 (real TCGA PanCancer Atlas data)",
         "genes":    len(FEATURE_GENES),
         "subtypes": ["BRCA", "LUAD", "COAD", "GBM", "PRAD"],
     }
@@ -73,7 +73,7 @@ async def predict_endpoint(file: UploadFile = File(...)):
     return {
         "predictions":     results,
         "totalSamples":    len(results),
-        "modelVersion":    "RandomForest v1.0",
+        "modelVersion":    "HistGradientBoosting v2.0",
         "featuresUsed":    results[0]["genesMatched"] if results else 0,
         "featuresMissing": results[0]["genesMissing"] if results else 0,
     }
@@ -98,7 +98,7 @@ def feature_importance():
             sub: per_class_means[sub][item["gene"]]
             for sub in per_class_means
         }
-    return {"genes": ranked, "method": "MDI (Mean Decrease in Impurity)", "model": "RandomForest v1.0", "nTrees": 200}
+    return {"genes": ranked, "method": "Permutation Importance", "model": "HistGradientBoosting v2.0"}
 
 
 @app.post("/ml/explain")
@@ -109,7 +109,7 @@ async def explain_endpoint(file: UploadFile = File(...)):
         results = explain(bundle, df)
     except Exception as exc:
         raise HTTPException(500, f"Explanation failed: {exc}")
-    return {"explanations": results, "model": "RandomForest v1.0", "method": "importance × (value − class_mean)"}
+    return {"explanations": results, "model": "HistGradientBoosting v2.0", "method": "permutation_importance × (value − class_mean)"}
 
 
 # ── Model versioning ───────────────────────────────────────────────────────────
@@ -121,16 +121,16 @@ def list_models():
 
 
 class TrainRequest(BaseModel):
-    n_estimators:      int = 200
-    max_depth:         int = 15
-    min_samples_split: int = 5
-    class_weight:      str = "balanced"
+    max_iter:          int = 300
+    learning_rate:     float = 0.05
+    max_depth:         int | None = None
+    l2_regularization: float = 0.0
 
 
 @app.post("/ml/models/train")
 def train_model(body: TrainRequest):
     """
-    Train a new Random Forest version with the supplied hyperparameters.
+    Train a new HistGradientBoosting version with the supplied hyperparameters.
     Runs 5-fold cross-validation for honest accuracy/F1 estimates.
     Blocks until training is complete (typically 5-15 s).
     """

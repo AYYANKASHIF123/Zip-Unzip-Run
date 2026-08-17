@@ -5,18 +5,19 @@ import threading
 import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.inspection import permutation_importance
 
 CANCER_SUBTYPES = ["BRCA", "LUAD", "COAD", "GBM", "PRAD"]
 
 SUBTYPE_LABELS = {
     "BRCA": "BRCA (Breast)",
     "LUAD": "LUAD (Lung Adeno)",
-    "COAD": "COAD (Colon)",
+    "COAD": "COAD (Colorectal)",  # NOTE: source cohort is COADREAD (colon + rectal), not colon-only
     "GBM":  "GBM (Glioblastoma)",
     "PRAD": "PRAD (Prostate)",
 }
@@ -32,8 +33,9 @@ FEATURE_GENES = [
 ]
 
 _DIR = os.path.dirname(__file__)
-MODEL_PATH    = os.path.join(_DIR, "model.pkl")
-REGISTRY_PATH = os.path.join(_DIR, "model_registry.json")
+MODEL_PATH        = os.path.join(_DIR, "model.pkl")
+REGISTRY_PATH     = os.path.join(_DIR, "model_registry.json")
+TRAINING_DATA_PATH = os.path.join(_DIR, "training_data_real.csv")
 
 _train_lock = threading.Lock()
 
@@ -52,19 +54,21 @@ def _save_registry(registry: dict) -> None:
         json.dump(registry, f, indent=2)
 
 
-def _add_version(version_id: str, params: dict, cv_accuracy: float, cv_f1: float) -> dict:
+def _add_version(version_id: str, params: dict, cv_accuracy: float, cv_f1: float,
+                  data_source: str = "real_tcga_pancan_atlas") -> dict:
     registry = load_registry()
     for v in registry["versions"]:
         v["isActive"] = False
     entry = {
         "id":          version_id,
-        "name":        f"Random Forest {version_id}",
+        "name":        f"HistGradientBoosting {version_id}",
         "createdAt":   datetime.now(timezone.utc).isoformat(),
         "params":      params,
         "cvAccuracy":  round(cv_accuracy, 4),
         "cvF1":        round(cv_f1, 4),
         "nGenes":      len(FEATURE_GENES),
         "nSubtypes":   len(CANCER_SUBTYPES),
+        "dataSource":  data_source,
         "isActive":    True,
         "filePath":    f"model_{version_id}.pkl",
     }
@@ -76,48 +80,31 @@ def _add_version(version_id: str, params: dict, cv_accuracy: float, cv_f1: float
 
 # ── Training data ──────────────────────────────────────────────────────────────
 
-def _generate_training_data(n_per_class: int = 400) -> tuple:
-    rng = np.random.RandomState(42)
-    n_feat = len(FEATURE_GENES)
-    idx = {g: i for i, g in enumerate(FEATURE_GENES)}
+def _load_training_data() -> tuple:
+    """
+    Loads real TCGA PanCancer Atlas mRNA expression data (mRNA expression
+    z-scores relative to all samples, RNA Seq V2 RSEM), pulled from cBioPortal
+    for 5 real cohorts: BRCA, LUAD, COADREAD, GBM, PRAD.
 
-    def make(n, over, under, noise=0.9):
-        X = rng.randn(n, n_feat) * noise
-        for g, v in over.items():
-            if g in idx:
-                X[:, idx[g]] += v + rng.randn(n) * 0.4
-        for g, v in under.items():
-            if g in idx:
-                X[:, idx[g]] -= v + rng.randn(n) * 0.4
-        return X
-
-    brca = make(n_per_class,
-                over={"ERBB2": 3.5, "PIK3CA": 2.2, "CCND1": 2.6, "ESR1": 4.1, "FGFR1": 1.6, "SRC": 1.9, "MYC": 1.4},
-                under={"BRCA1": 3.1, "BRCA2": 2.6, "PTEN": 1.6, "CDH1": 2.1, "RB1": 0.8})
-    luad = make(n_per_class,
-                over={"EGFR": 4.2, "KRAS": 2.9, "ALK": 2.1, "MET": 2.6, "FGFR2": 1.6, "NOTCH1": 1.2},
-                under={"TP53": 3.6, "CDKN2A": 2.1, "RB1": 1.9, "NF1": 1.6, "SMAD4": 1.0})
-    coad = make(n_per_class,
-                over={"CTNNB1": 3.1, "BRAF": 2.6, "KRAS": 3.6, "MYC": 3.1, "FGFR3": 1.6, "NOTCH2": 1.3},
-                under={"APC": 4.1, "MLH1": 2.6, "SMAD4": 2.1, "PTEN": 1.6, "RB1": 1.1, "ARID1A": 1.5})
-    gbm  = make(n_per_class,
-                over={"EGFR": 5.1, "NRAS": 2.1, "PDGFRA": 3.1, "TERT": 2.6, "MYC": 1.6, "KIT": 1.4},
-                under={"PTEN": 4.6, "PBRM1": 2.6, "NF1": 2.1, "TP53": 2.1, "IDH1": 2.8, "IDH2": 2.5})
-    prad = make(n_per_class,
-                over={"AR": 5.2, "MYC": 2.1, "AKT1": 1.6, "MTOR": 1.6, "DNMT3A": 1.1, "KDM6A": 0.9},
-                under={"PTEN": 3.6, "RB1": 1.6, "CDKN1B": 2.1, "NF1": 1.1, "FOXO3": 1.3})
-
-    X = np.vstack([brca, luad, coad, gbm, prad])
-    y = np.concatenate([[i] * n_per_class for i in range(5)])
+    Replaces the earlier synthetic/placeholder data generator. See
+    training_data_real.csv for the underlying real, labeled samples
+    (3330 real patient samples across the 5 subtypes).
+    """
+    if not os.path.exists(TRAINING_DATA_PATH):
+        raise FileNotFoundError(
+            f"Real training data not found at {TRAINING_DATA_PATH}. "
+            "This service requires training_data_real.csv to be present."
+        )
+    df = pd.read_csv(TRAINING_DATA_PATH)
+    label_to_idx = {c: i for i, c in enumerate(CANCER_SUBTYPES)}
+    y = df["subtype"].map(label_to_idx).values
+    X = df[FEATURE_GENES].values.astype(float)
     return X, y
 
 
-def _build_bundle(pipeline, X, y) -> dict:
-    clf = pipeline.named_steps["clf"]
-    feature_importances = clf.feature_importances_.tolist()
-    X_scaled = pipeline.named_steps["scaler"].transform(
-        pipeline.named_steps["imputer"].transform(X)
-    )
+def _build_bundle(pipeline, X, y, importances) -> dict:
+    X_imp    = pipeline.named_steps["imputer"].transform(X)
+    X_scaled = pipeline.named_steps["scaler"].transform(X_imp)
     per_class_means: dict = {}
     for class_idx, subtype_key in enumerate(CANCER_SUBTYPES):
         mask = (y == class_idx)
@@ -126,48 +113,75 @@ def _build_bundle(pipeline, X, y) -> dict:
             for i, gene in enumerate(FEATURE_GENES)
         }
     return {
-        "pipeline":           pipeline,
-        "features":           FEATURE_GENES,
-        "feature_importances": feature_importances,
-        "per_class_means":    per_class_means,
+        "pipeline":            pipeline,
+        "features":            FEATURE_GENES,
+        "feature_importances": importances.tolist(),
+        "per_class_means":     per_class_means,
     }
 
 
 def _make_pipeline(params: dict) -> Pipeline:
-    cw = params.get("class_weight", "balanced")
     return Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
         ("scaler",  StandardScaler()),
-        ("clf",     RandomForestClassifier(
-            n_estimators=   max(50,  min(500, int(params.get("n_estimators",   200)))),
-            max_depth=      max(5,   min(30,  int(params.get("max_depth",       15)))),
-            min_samples_split=max(2, min(20,  int(params.get("min_samples_split", 5)))),
-            class_weight=   None if cw == "uniform" else cw,
+        ("clf",     HistGradientBoostingClassifier(
+            max_iter=      max(50,  min(1000, int(params.get("max_iter", 300)))),
+            learning_rate=  float(params.get("learning_rate", 0.05)),
+            max_depth=      (None if params.get("max_depth") in (None, "none", "None")
+                              else max(1, min(30, int(params.get("max_depth", 0) or 0)))) or None,
+            l2_regularization=float(params.get("l2_regularization", 0.0)),
             random_state=42,
-            n_jobs=-1,
         )),
     ])
 
 
+def _compute_importances(pipeline, X, y) -> np.ndarray:
+    """
+    HistGradientBoostingClassifier has no built-in feature_importances_,
+    so we use permutation importance instead (works for any estimator,
+    measures the real drop in accuracy when a gene's values are shuffled).
+    """
+    result = permutation_importance(pipeline, X, y, n_repeats=5, random_state=42, n_jobs=-1)
+    return result.importances_mean
+
+
 # ── Core train / load ──────────────────────────────────────────────────────────
 
-DEFAULT_PARAMS = {"n_estimators": 200, "max_depth": 15, "min_samples_split": 5, "class_weight": "balanced"}
+DEFAULT_PARAMS = {"max_iter": 300, "learning_rate": 0.05, "max_depth": None, "l2_regularization": 0.0}
 
 
 def _train_and_save() -> dict:
-    print("Training Random Forest v1 on synthetic gene expression data…")
-    X, y = _generate_training_data()
+    print("Training HistGradientBoosting v2 on real TCGA PanCancer Atlas gene expression data…")
+    X, y = _load_training_data()
     pipeline = _make_pipeline(DEFAULT_PARAMS)
+
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    cv_acc = cross_val_score(pipeline, X, y, cv=skf, scoring="accuracy", n_jobs=-1).mean()
+    cv_f1  = cross_val_score(pipeline, X, y, cv=skf, scoring="f1_weighted", n_jobs=-1).mean()
+
     pipeline.fit(X, y)
-    bundle = _build_bundle(pipeline, X, y)
+    importances = _compute_importances(pipeline, X, y)
+    bundle = _build_bundle(pipeline, X, y, importances)
     with open(MODEL_PATH, "wb") as f:
         pickle.dump(bundle, f)
 
-    # Bootstrap the registry with v1
     if not os.path.exists(REGISTRY_PATH):
-        _add_version("v1", DEFAULT_PARAMS, 0.924, 0.921)
+        # Preserve v1 (synthetic-data RandomForest) in history for transparency,
+        # then register v2 as the real, active model.
+        registry = {
+            "versions": [{
+                "id": "v1", "name": "Random Forest v1 (synthetic data — superseded)",
+                "createdAt": datetime.now(timezone.utc).isoformat(),
+                "params": {"n_estimators": 200, "max_depth": 15, "min_samples_split": 5, "class_weight": "balanced"},
+                "cvAccuracy": 0.924, "cvF1": 0.921, "nGenes": len(FEATURE_GENES), "nSubtypes": len(CANCER_SUBTYPES),
+                "dataSource": "synthetic_placeholder", "isActive": False, "filePath": "model_v1.pkl",
+            }],
+            "activeVersionId": None,
+        }
+        _save_registry(registry)
+    _add_version("v2", DEFAULT_PARAMS, cv_acc, cv_f1)
 
-    print("Model v1 trained and saved.")
+    print(f"Model v2 trained and saved. CV accuracy={cv_acc:.4f} F1={cv_f1:.4f}")
     return bundle
 
 
@@ -178,8 +192,12 @@ def load_or_train_model() -> dict:
         if "feature_importances" not in bundle or "per_class_means" not in bundle:
             os.remove(MODEL_PATH)
             return _train_and_save()
-        if not os.path.exists(REGISTRY_PATH):
-            _add_version("v1", DEFAULT_PARAMS, 0.924, 0.921)
+        registry = load_registry()
+        active = next((v for v in registry.get("versions", []) if v.get("isActive")), None)
+        if active is None or active.get("dataSource") != "real_tcga_pancan_atlas":
+            # Stale bundle trained on old (synthetic) data — force retrain on real data.
+            os.remove(MODEL_PATH)
+            return _train_and_save()
         return bundle
     return _train_and_save()
 
@@ -188,8 +206,9 @@ def load_or_train_model() -> dict:
 
 def train_new_version(params: dict) -> tuple:
     """
-    Train a new model with the given hyperparameters.
-    Uses 5-fold cross-validation to compute honest accuracy/F1 estimates.
+    Train a new HistGradientBoosting version with the given hyperparameters,
+    on the real TCGA training data. Uses stratified 5-fold cross-validation
+    to compute honest accuracy/F1 estimates.
     Returns (version_entry, bundle).
     Raises RuntimeError if another training job is running.
     """
@@ -197,35 +216,31 @@ def train_new_version(params: dict) -> tuple:
         raise RuntimeError("Another training job is already running")
     try:
         print(f"Training new version with params: {params}")
-        X, y = _generate_training_data()
+        X, y = _load_training_data()
         pipeline = _make_pipeline(params)
 
-        # 5-fold CV
-        cv_acc = cross_val_score(pipeline, X, y, cv=5, scoring="accuracy",    n_jobs=-1).mean()
-        cv_f1  = cross_val_score(pipeline, X, y, cv=5, scoring="f1_weighted", n_jobs=-1).mean()
+        skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        cv_acc = cross_val_score(pipeline, X, y, cv=skf, scoring="accuracy",    n_jobs=-1).mean()
+        cv_f1  = cross_val_score(pipeline, X, y, cv=skf, scoring="f1_weighted", n_jobs=-1).mean()
 
-        # Fit on full data
         pipeline.fit(X, y)
-        bundle = _build_bundle(pipeline, X, y)
+        importances = _compute_importances(pipeline, X, y)
+        bundle = _build_bundle(pipeline, X, y, importances)
 
-        # Version numbering
         registry = load_registry()
         version_id = f"v{len(registry['versions']) + 1}"
 
-        # Save versioned pickle
         ver_path = os.path.join(_DIR, f"model_{version_id}.pkl")
         with open(ver_path, "wb") as f:
             pickle.dump(bundle, f)
-
-        # Also overwrite the active model file
         with open(MODEL_PATH, "wb") as f:
             pickle.dump(bundle, f)
 
         clean_params = {
-            "n_estimators":      max(50, min(500, int(params.get("n_estimators", 200)))),
-            "max_depth":         max(5,  min(30,  int(params.get("max_depth", 15)))),
-            "min_samples_split": max(2,  min(20,  int(params.get("min_samples_split", 5)))),
-            "class_weight":      params.get("class_weight", "balanced"),
+            "max_iter":          max(50, min(1000, int(params.get("max_iter", 300)))),
+            "learning_rate":     float(params.get("learning_rate", 0.05)),
+            "max_depth":         params.get("max_depth", None),
+            "l2_regularization": float(params.get("l2_regularization", 0.0)),
         }
         version = _add_version(version_id, clean_params, float(cv_acc), float(cv_f1))
         print(f"Version {version_id} trained: CV acc={cv_acc:.4f} F1={cv_f1:.4f}")

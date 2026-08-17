@@ -1,9 +1,27 @@
 {
   "versions": [
     {
+      "id": "v2",
+      "name": "HistGradientBoosting v2",
+      "createdAt": "2026-08-17T03:33:40.284491+00:00",
+      "params": {
+        "max_iter": 300,
+        "learning_rate": 0.05,
+        "max_depth": null,
+        "l2_regularization": 0.0
+      },
+      "cvAccuracy": 0.8652,
+      "cvF1": 0.8629,
+      "nGenes": 50,
+      "nSubtypes": 5,
+      "dataSource": "real_tcga_pancan_atlas",
+      "isActive": true,
+      "filePath": "model_v2.pkl"
+    },
+    {
       "id": "v1",
-      "name": "Random Forest v1",
-      "createdAt": "2026-06-05T09:41:32.303045+00:00",
+      "name": "Random Forest v1 (synthetic data \u2014 superseded)",
+      "createdAt": "2026-08-17T03:33:40.283963+00:00",
       "params": {
         "n_estimators": 200,
         "max_depth": 15,
@@ -14,9 +32,10 @@
       "cvF1": 0.921,
       "nGenes": 50,
       "nSubtypes": 5,
-      "isActive": true,
+      "dataSource": "synthetic_placeholder",
+      "isActive": false,
       "filePath": "model_v1.pkl"
     }
   ],
-  "activeVersionId": "v1"
+  "activeVersionId": "v2"
 }
