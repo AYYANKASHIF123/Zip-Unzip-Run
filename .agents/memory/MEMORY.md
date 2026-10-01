@@ -1,2 +1,2 @@
-- [GeneClassifier XAI honesty](geneclassifier-xai-honesty.md) — always call it "MDI + class-mean delta", never "SHAP", when labeling contribution/explainability scores in this app.
+- [GeneClassifier XAI honesty](geneclassifier-xai-honesty.md) — describe v2 as permutation importance + class-mean delta; never label contribution scores as SHAP.
 - [GeneClassifier prototype labeling pattern](geneclassifier-prototype-labeling.md) — shared PageHeader/PrototypeBanner/ScoreCard components + readiness-scoring convention for startup/research-preview pages.

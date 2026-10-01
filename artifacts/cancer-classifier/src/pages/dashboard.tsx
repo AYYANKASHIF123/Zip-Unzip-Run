@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useGetDashboardSummary, useCreateAnalysis, useGetAnalysis } from "@workspace/api-client-react";
 import { HeaderControls } from "@/components/layout/HeaderControls";
 import { KPICard } from "@/components/ui/kpi-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
 import { formatPercent, formatCompact, CHART_COLOR_LIST, CustomTooltip, CustomLegend } from "@/lib/constants";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -22,26 +22,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const PLATFORM_STATS = [
   { label: "Total Analyses",     value: 12,      color: "text-primary"    },
-  { label: "Samples Analyzed",   value: "1,650+",color: "text-blue-500"   },
-  { label: "Genes Processed",    value: "20.5k", color: "text-purple-500" },
+  { label: "Training Samples",   value: "3,330", color: "text-blue-500"   },
+  { label: "Model Genes",        value: "50",    color: "text-purple-500" },
   { label: "Cancer Types",       value: 5,       color: "text-pink-500"   },
   { label: "Datasets",           value: 8,       color: "text-amber-500"  },
-  { label: "Models Trained",     value: 7,       color: "text-cyan-500"   },
+  { label: "Active ML Models",   value: 1,       color: "text-cyan-500"   },
 ];
 
 const WARNINGS = [
   { type: "warning", msg: "Dataset GEO-GSE29210: 12 missing values detected in feature matrix." },
   { type: "warning", msg: "Sample TCGA-BH-A0B3: Low confidence prediction (54.2%) — manual review recommended." },
   { type: "info",    msg: "Pipeline last run: May 22, 08:30 — all 6 stages completed successfully." },
-  { type: "info",    msg: "Model GNN-AE v2.4.1 is active and accepting prediction requests." },
+  { type: "info",    msg: "HistGradientBoosting v2 is active, trained on real TCGA PanCancer Atlas data." },
 ];
 
-const MODEL_PERF = [
-  { model: "GNN-AE",        accuracy: 92.4, f1: 91.9, auc: 97.8 },
-  { model: "Neural Net",    accuracy: 90.1, f1: 89.6, auc: 96.1 },
-  { model: "Grad. Boost",   accuracy: 88.4, f1: 88.0, auc: 95.2 },
-  { model: "Random Forest", accuracy: 87.1, f1: 86.7, auc: 94.4 },
-];
+type ModelVersion = { id: string; name: string; cvAccuracy: number; cvF1: number; isActive: boolean };
+type ModelRegistry = { versions: ModelVersion[]; activeVersionId: string | null };
 
 const PIPELINE_STAGES = [
   { label: "Data Ingestion",       pct: 100, status: "done"   },
@@ -56,6 +52,16 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { data, isLoading, isFetching, dataUpdatedAt } = useGetDashboardSummary();
   const loading = isLoading || isFetching;
+  const modelRegistryQuery = useQuery<ModelRegistry>({
+    queryKey: ["/api/models/versions"],
+    queryFn: async () => {
+      const response = await fetch("/api/models/versions");
+      if (!response.ok) throw new Error("Model registry unavailable");
+      return response.json();
+    },
+    staleTime: 30_000,
+  });
+  const activeModel = modelRegistryQuery.data?.versions.find(version => version.isActive);
   const [, navigate] = useLocation();
 
   // ── Quick Classify ────────────────────────────────────────────────────────
@@ -102,6 +108,7 @@ export default function Dashboard() {
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/models/versions"] });
   };
 
   const statusColors: Record<string, string> = {
@@ -142,7 +149,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <KPICard title="Total Analyses"  value={data?.totalAnalyses ?? 0}  loading={loading} />
           <KPICard title="Completed"       value={data?.completedAnalyses ?? 0} loading={loading} color="#009118" />
-          <KPICard title="Model Accuracy"  value={data ? formatPercent(data.overallAccuracy * 100) : "0%"} loading={loading} />
+          <KPICard title="5-fold CV Accuracy" value={activeModel ? formatPercent(activeModel.cvAccuracy * 100) : "—"} loading={modelRegistryQuery.isLoading} />
           <KPICard title="Biomarkers Found" value={data ? formatCompact(data.totalBiomarkersFound) : 0} loading={loading} color="#795EFF" />
         </div>
 
@@ -157,7 +164,7 @@ export default function Dashboard() {
 
               <div className="flex flex-1 flex-col sm:flex-row gap-2 sm:items-end">
                 <div className="flex-1 space-y-1">
-                  <Label htmlFor="qs-id" className="text-xs text-muted-foreground">Sample ID</Label>
+                  <Label htmlFor="qs-id" className="text-xs text-muted-foreground">Sample ID (demo values)</Label>
                   <Input
                     id="qs-id"
                     placeholder="e.g. TCGA-A7-A0CE"
@@ -203,6 +210,9 @@ export default function Dashboard() {
                 </p>
               )}
             </div>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Entering an ID here generates demo expression values. For inference on measured data, upload a gene-expression CSV in Analyses.
+            </p>
           </CardContent>
         </Card>
 
@@ -322,17 +332,31 @@ export default function Dashboard() {
               </Button>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={220} debounce={0}>
-                <BarChart data={MODEL_PERF}>
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
-                  <XAxis dataKey="model" fontSize={10} opacity={0.7} />
-                  <YAxis domain={[80, 100]} fontSize={11} opacity={0.7} tickFormatter={v => `${v}%`} />
-                  <Tooltip content={<CustomTooltip />} cursor={false} isAnimationActive={false} />
-                  <Legend content={<CustomLegend />} />
-                  <Bar dataKey="accuracy" name="Accuracy"  fill={CHART_COLOR_LIST[0]} radius={[4,4,0,0]} isAnimationActive={false} />
-                  <Bar dataKey="f1"       name="F1-Score"  fill={CHART_COLOR_LIST[1]} radius={[4,4,0,0]} isAnimationActive={false} />
-                </BarChart>
-              </ResponsiveContainer>
+              {modelRegistryQuery.isLoading ? (
+                <div className="space-y-3"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>
+              ) : activeModel ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold">{activeModel.name}</span>
+                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">Active</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-lg border p-3">
+                      <div className="text-xs text-muted-foreground">5-fold CV accuracy</div>
+                      <div className="text-2xl font-bold text-primary">{formatPercent(activeModel.cvAccuracy * 100)}</div>
+                    </div>
+                    <div className="rounded-lg border p-3">
+                      <div className="text-xs text-muted-foreground">5-fold weighted F1</div>
+                      <div className="text-2xl font-bold text-primary">{formatPercent(activeModel.cvF1 * 100)}</div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Real TCGA PanCancer Atlas training data · 3,330 samples · 50 input genes. Research benchmark, not clinical validation.
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Active model metrics are unavailable.</p>
+              )}
             </CardContent>
           </Card>
 
@@ -364,7 +388,7 @@ export default function Dashboard() {
               <div className="mt-3 pt-2 border-t border-border/50 grid grid-cols-3 gap-2 text-center text-xs">
                 <div><div className="font-semibold text-green-500">6/6</div><div className="text-muted-foreground">Stages Done</div></div>
                 <div><div className="font-semibold text-primary">100%</div><div className="text-muted-foreground">Pipeline Health</div></div>
-                <div><div className="font-semibold">GNN-AE v2.4.1</div><div className="text-muted-foreground">Active Model</div></div>
+                <div><div className="font-semibold">{activeModel?.name ?? "—"}</div><div className="text-muted-foreground">Active Model</div></div>
               </div>
             </CardContent>
           </Card>

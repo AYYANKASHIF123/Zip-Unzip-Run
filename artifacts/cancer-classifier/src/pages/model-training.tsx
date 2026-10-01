@@ -19,16 +19,12 @@ type ModelVersion = {
   id: string;
   name: string;
   createdAt: string;
-  params: {
-    n_estimators: number;
-    max_depth: number;
-    min_samples_split: number;
-    class_weight: string;
-  };
+  params: Record<string, number | string | null>;
   cvAccuracy: number;
   cvF1: number;
   nGenes: number;
   nSubtypes: number;
+  dataSource: string;
   isActive: boolean;
   filePath: string;
 };
@@ -46,10 +42,10 @@ type TrainResult = {
 export default function ModelTraining() {
   const qc = useQueryClient();
 
-  const [nEstimators,     setNEstimators]     = useState(200);
-  const [maxDepth,        setMaxDepth]        = useState(15);
-  const [minSamplesSplit, setMinSamplesSplit] = useState(5);
-  const [classWeight,     setClassWeight]     = useState("balanced");
+  const [maxIter, setMaxIter] = useState(300);
+  const [learningRate, setLearningRate] = useState(0.05);
+  const [maxDepth, setMaxDepth] = useState<number | null>(null);
+  const [l2Regularization, setL2Regularization] = useState(0);
   const [trainError,      setTrainError]      = useState<string | null>(null);
   const [lastTrained,     setLastTrained]     = useState<ModelVersion | null>(null);
 
@@ -65,15 +61,15 @@ export default function ModelTraining() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          n_estimators:      nEstimators,
-          max_depth:         maxDepth,
-          min_samples_split: minSamplesSplit,
-          class_weight:      classWeight,
+          max_iter: maxIter,
+          learning_rate: learningRate,
+          max_depth: maxDepth,
+          l2_regularization: l2Regularization,
         }),
       }).then(async r => {
         if (!r.ok) {
           const err = await r.json().catch(() => ({})) as Record<string, unknown>;
-          throw new Error((err.detail as string) ?? "Training failed");
+          throw new Error((err.detail as string) ?? (err.error as string) ?? "Training failed");
         }
         return r.json();
       }),
@@ -98,15 +94,15 @@ export default function ModelTraining() {
       <div className="max-w-[1200px] mx-auto space-y-4">
         <HeaderControls
           title="Model Training"
-          subtitle="Retrain the Random Forest with custom hyperparameters and track version history."
+          subtitle="Retrain HistGradientBoosting on the real TCGA-derived training cohort and track version history."
           onRefresh={() => qc.invalidateQueries({ queryKey: ["/api/models/versions"] })}
         />
 
         <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800">
           <Info className="h-4 w-4 text-blue-500" />
           <AlertDescription className="text-sm text-blue-800 dark:text-blue-300">
-            Each new version runs <strong>5-fold cross-validation</strong> for an honest accuracy estimate, then fits on the full
-            synthetic TCGA training set. Training takes 5–15 seconds depending on tree count.
+            Each new version runs <strong>5-fold stratified cross-validation</strong> on 3,330 real TCGA PanCancer Atlas samples,
+            then fits on the full training set. Training takes several seconds.
             The newly trained model is immediately set as active and used for all future predictions.
           </AlertDescription>
         </Alert>
@@ -139,25 +135,21 @@ export default function ModelTraining() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">CV F1-Score</span>
+                    <span className="text-muted-foreground">5-fold weighted CV F1</span>
                     <span className="font-bold">{formatPercent(activeVersion.cvF1 * 100)}</span>
                   </div>
                   <Separator className="my-2" />
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Trees</span>
-                    <span className="font-mono">{activeVersion.params.n_estimators}</span>
+                    <span className="text-muted-foreground">Iterations</span>
+                    <span className="font-mono">{activeVersion.params.max_iter ?? "—"}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Max Depth</span>
-                    <span className="font-mono">{activeVersion.params.max_depth}</span>
+                    <span className="text-muted-foreground">Learning Rate</span>
+                    <span className="font-mono">{activeVersion.params.learning_rate ?? "—"}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Min Split</span>
-                    <span className="font-mono">{activeVersion.params.min_samples_split}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Class Weight</span>
-                    <Badge variant="outline" className="text-[10px]">{activeVersion.params.class_weight}</Badge>
+                    <span className="text-muted-foreground">Max Depth / L2</span>
+                    <span className="font-mono">{activeVersion.params.max_depth ?? "Unlimited"} / {activeVersion.params.l2_regularization ?? "—"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Genes</span>
@@ -183,72 +175,65 @@ export default function ModelTraining() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
-              {/* n_estimators */}
+              {/* max_iter */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Number of Trees</Label>
-                  <span className="text-sm font-mono font-bold text-primary">{nEstimators}</span>
+                  <Label className="text-sm font-medium">Boosting Iterations</Label>
+                  <span className="text-sm font-mono font-bold text-primary">{maxIter}</span>
                 </div>
                 <Slider
-                  min={50} max={500} step={50}
-                  value={[nEstimators]}
-                  onValueChange={([v]) => setNEstimators(v)}
+                  min={100} max={500} step={50}
+                  value={[maxIter]}
+                  onValueChange={([v]) => setMaxIter(v)}
                   disabled={isTraining}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>50 (faster)</span><span>500 (more accurate)</span>
+                  <span>100</span><span>500</span>
                 </div>
               </div>
 
-              {/* max_depth */}
+              {/* learning_rate */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Max Tree Depth</Label>
-                  <span className="text-sm font-mono font-bold text-primary">{maxDepth}</span>
+                  <Label className="text-sm font-medium">Learning Rate</Label>
+                  <span className="text-sm font-mono font-bold text-primary">{learningRate.toFixed(2)}</span>
                 </div>
                 <Slider
-                  min={5} max={30} step={5}
-                  value={[maxDepth]}
-                  onValueChange={([v]) => setMaxDepth(v)}
+                  min={0.01} max={0.20} step={0.01}
+                  value={[learningRate]}
+                  onValueChange={([v]) => setLearningRate(v)}
                   disabled={isTraining}
                   className="w-full"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>5 (generalises)</span><span>30 (fits tightly)</span>
+                  <span>0.01</span><span>0.20</span>
                 </div>
               </div>
 
-              {/* min_samples_split */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium">Min Samples per Split</Label>
-                  <span className="text-sm font-mono font-bold text-primary">{minSamplesSplit}</span>
+                  <Label className="text-sm font-medium">Maximum Leaf Depth</Label>
+                  <span className="text-sm font-mono font-bold text-primary">{maxDepth ?? "Unlimited"}</span>
                 </div>
-                <Slider
-                  min={2} max={20} step={1}
-                  value={[minSamplesSplit]}
-                  onValueChange={([v]) => setMinSamplesSplit(v)}
-                  disabled={isTraining}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>2 (complex)</span><span>20 (regularised)</span>
-                </div>
-              </div>
-
-              {/* class_weight */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Class Weight Strategy</Label>
-                <Select value={classWeight} onValueChange={setClassWeight} disabled={isTraining}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={maxDepth === null ? "unlimited" : String(maxDepth)} onValueChange={v => setMaxDepth(v === "unlimited" ? null : Number(v))} disabled={isTraining}>
+                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="balanced">Balanced (recommended for imbalanced datasets)</SelectItem>
-                    <SelectItem value="uniform">Uniform (equal weight per sample)</SelectItem>
+                    <SelectItem value="unlimited">Unlimited (default)</SelectItem>
+                    <SelectItem value="3">3</SelectItem>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="8">8</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium">L2 Regularization</Label>
+                  <span className="text-sm font-mono font-bold text-primary">{l2Regularization.toFixed(1)}</span>
+                </div>
+                <Slider min={0} max={1} step={0.1} value={[l2Regularization]} onValueChange={([v]) => setL2Regularization(v)} disabled={isTraining} className="w-full" />
+                <div className="flex justify-between text-xs text-muted-foreground"><span>0 (none)</span><span>1.0 (stronger)</span></div>
               </div>
 
               {/* Error / success */}
@@ -263,7 +248,7 @@ export default function ModelTraining() {
                   <AlertDescription className="text-xs text-green-700">
                     <strong>{lastTrained.name}</strong> trained successfully —
                     CV accuracy {formatPercent(lastTrained.cvAccuracy * 100)},
-                    F1 {formatPercent(lastTrained.cvF1 * 100)}.
+                    weighted F1 {formatPercent(lastTrained.cvF1 * 100)}.
                     Now set as active model.
                   </AlertDescription>
                 </Alert>
@@ -303,11 +288,11 @@ export default function ModelTraining() {
                     <TableRow>
                       <TableHead>Version</TableHead>
                       <TableHead className="text-right">CV Accuracy</TableHead>
-                      <TableHead className="text-right">CV F1</TableHead>
-                      <TableHead className="text-right">Trees</TableHead>
-                      <TableHead className="text-right">Depth</TableHead>
-                      <TableHead className="text-right">Min Split</TableHead>
-                      <TableHead>Class Weight</TableHead>
+                      <TableHead className="text-right">CV Weighted F1</TableHead>
+                      <TableHead className="text-right">Iterations</TableHead>
+                      <TableHead className="text-right">Learning Rate</TableHead>
+                      <TableHead className="text-right">Max Depth</TableHead>
+                      <TableHead className="text-right">L2</TableHead>
                       <TableHead>Trained</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
@@ -320,12 +305,10 @@ export default function ModelTraining() {
                           {formatPercent(v.cvAccuracy * 100)}
                         </TableCell>
                         <TableCell className="text-right font-mono">{formatPercent(v.cvF1 * 100)}</TableCell>
-                        <TableCell className="text-right font-mono">{v.params.n_estimators}</TableCell>
-                        <TableCell className="text-right font-mono">{v.params.max_depth}</TableCell>
-                        <TableCell className="text-right font-mono">{v.params.min_samples_split}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[10px]">{v.params.class_weight}</Badge>
-                        </TableCell>
+                        <TableCell className="text-right font-mono">{v.params.max_iter ?? "—"}</TableCell>
+                        <TableCell className="text-right font-mono">{v.params.learning_rate ?? "—"}</TableCell>
+                        <TableCell className="text-right font-mono">{v.params.max_depth ?? "Unlimited"}</TableCell>
+                        <TableCell className="text-right font-mono">{v.params.l2_regularization ?? "—"}</TableCell>
                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                           {format(new Date(v.createdAt), "d MMM yyyy, HH:mm")}
                         </TableCell>

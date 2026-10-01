@@ -24,9 +24,9 @@ function exportPaperPdf() {
   line("Abstract", 12, true);
   line("This paper presents GeneClassifier, a research prototype platform for classifying cancer subtypes from gene expression profiles using classical machine learning models with post-hoc explainability. The system demonstrates a complete research workflow: data ingestion, validation, model inference, interpretability, and reporting.");
   line("Methodology", 12, true);
-  line("Gene expression CSVs are validated against a reference gene panel, scaled, and passed to a Random Forest classifier. Per-gene contribution is estimated via Mean Decrease in Impurity (MDI) combined with class-mean delta, not full Shapley value computation.");
+  line("Gene expression CSVs are validated against a 50-gene reference panel, median-imputed, standard-scaled, and passed to a HistGradientBoosting classifier. Global importance uses permutation importance; per-gene contribution combines that score with the sample's class-mean delta, not full Shapley value computation.");
   line("Results Summary", 12, true);
-  line("The current model achieves competitive accuracy on held-out demo data. Full results, confusion matrices and per-class metrics are available on the Model Performance page of the platform.");
+  line("The active v2 model reaches 86.52% cross-validated accuracy and 86.29% weighted F1 on 3,330 real TCGA PanCancer Atlas samples. These are research benchmarks, not external clinical validation results.");
   line("Limitations", 12, true);
   line("This work has not been externally validated against real-world clinical cohorts. It should be treated as a research and educational prototype, not a diagnostic tool.");
   line("Future Work", 12, true);
@@ -67,30 +67,32 @@ export default function ResearchPaper() {
             <div>
               <SectionTitle>Methodology</SectionTitle>
               <p className="text-sm text-muted-foreground">
-                Gene expression CSVs are validated against a reference gene panel, scaled, and passed to a Random
-                Forest classifier. Per-gene contribution is estimated via Mean Decrease in Impurity (MDI) combined
-                with class-mean delta — an approximation, not full Shapley value computation.
+                 Gene expression CSVs are validated against a 50-gene reference panel, median-imputed, standard-scaled,
+                 and passed to a HistGradientBoosting classifier. Global importance uses permutation importance;
+                 per-gene contribution combines that score with class-mean delta — an approximation, not full Shapley
+                 value computation.
               </p>
             </div>
             <div>
               <SectionTitle>Model Architecture</SectionTitle>
               <p className="text-sm text-muted-foreground">
-                Ensemble tree-based classifier (Random Forest), trained on labelled gene expression samples spanning
-                five cancer subtypes, deployed via a Python FastAPI inference microservice.
+                 HistGradientBoostingClassifier, trained with 5-fold stratified cross-validation on 3,330 real labelled
+                 samples spanning BRCA, LUAD, COADREAD, GBM, and PRAD, deployed via a Python FastAPI inference microservice.
               </p>
             </div>
             <div>
               <SectionTitle>Dataset Description</SectionTitle>
               <p className="text-sm text-muted-foreground">
-                Demo/training data reflects publicly available gene expression structures similar to TCGA-style
-                cohorts. Live external dataset connections (TCGA, GEO, etc.) are demo/planned, see Dataset Integration.
+                 The active training file contains real TCGA PanCancer Atlas mRNA expression samples from cBioPortal.
+                 The COAD label represents the combined COADREAD colorectal cohort. This is a research dataset, not a
+                 clinical diagnostic cohort.
               </p>
             </div>
             <div>
               <SectionTitle>Results Summary</SectionTitle>
               <p className="text-sm text-muted-foreground">
-                The current model achieves competitive accuracy on held-out demo data. Full metrics, per-class
-                performance and confusion matrices are available on the Model Performance page.
+                 The active model reports 86.52% 5-fold cross-validated accuracy and 86.29% weighted F1. Full platform
+                 metrics and confusion matrices are available on the Model Performance page.
               </p>
             </div>
             <div>

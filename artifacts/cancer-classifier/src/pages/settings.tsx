@@ -22,7 +22,7 @@ export default function Settings() {
   const [platformName, setPlatformName] = useState("GeneClassifier");
   const [orgName, setOrgName] = useState("Genomics Research Lab");
   const [researchMode, setResearchMode] = useState(true);
-  const [activeModel, setActiveModel] = useState("gnn-ae");
+  const [activeModel, setActiveModel] = useState("hist-gradient-boosting");
   const [defaultNorm, setDefaultNorm] = useState("rpkm");
   const [defaultSplit, setDefaultSplit] = useState("80-20");
   const [reportBranding, setReportBranding] = useState("GeneClassifier Research Platform");
@@ -138,25 +138,18 @@ export default function Settings() {
                 <Select value={activeModel} onValueChange={setActiveModel} disabled={!canEdit}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gnn-ae">GNN-AE v2.4.1 (Recommended)</SelectItem>
-                    <SelectItem value="neural-net">Neural Network v1.3.0</SelectItem>
-                    <SelectItem value="grad-boost">Gradient Boosting v1.1.2</SelectItem>
-                    <SelectItem value="random-forest">Random Forest v1.2.1</SelectItem>
-                    <SelectItem value="svm">Support Vector Machine v1.0.3</SelectItem>
-                    <SelectItem value="logistic">Logistic Regression v1.0.1</SelectItem>
-                    <SelectItem value="autoencoder">Autoencoder v1.1.0</SelectItem>
+                    <SelectItem value="hist-gradient-boosting">HistGradientBoosting v2.0 (Active)</SelectItem>
+                    <SelectItem value="random-forest">Random Forest v1 (superseded)</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">Used for all new prediction runs.</p>
               </div>
               <div className="space-y-1.5">
-                <Label>XAI Method</Label>
-                <Select defaultValue="shap-approx" disabled={!canEdit}>
+                  <Label>XAI Method</Label>
+                <Select defaultValue="permutation-class-mean" disabled={!canEdit}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="shap-approx">SHAP-Approximation (Default)</SelectItem>
-                    <SelectItem value="permutation">Permutation Importance</SelectItem>
-                    <SelectItem value="coefficient">Coefficient-based</SelectItem>
+                    <SelectItem value="permutation-class-mean">Permutation Importance + Class-Mean Delta (Active)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

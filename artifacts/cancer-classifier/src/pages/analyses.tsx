@@ -531,7 +531,7 @@ export default function Analyses() {
 
                   {pollingId !== null && (
                     <p className="text-xs text-center text-muted-foreground">
-                      Random Forest is classifying 50 biomarker genes…
+                      HistGradientBoosting v2 is classifying the 50-gene input…
                     </p>
                   )}
                 </form>

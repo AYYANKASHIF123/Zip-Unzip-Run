@@ -76,7 +76,7 @@ export default function PipelineMonitor() {
           <CardHeader className="px-4 pt-4 pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base">Pipeline Progress</CardTitle>
-              {pipeline && <span className="text-sm text-muted-foreground">Model: {pipeline.stages.length ? "GNN-AE v2.4.1" : ""} · Last run: {pipeline.lastRun ? format(new Date(pipeline.lastRun), "MMM d, HH:mm") : "—"}</span>}
+              {pipeline && <span className="text-sm text-muted-foreground">Model: {pipeline.stages.length ? "HistGradientBoosting v2.0" : ""} · Last run: {pipeline.lastRun ? format(new Date(pipeline.lastRun), "MMM d, HH:mm") : "—"}</span>}
             </div>
           </CardHeader>
           <CardContent>

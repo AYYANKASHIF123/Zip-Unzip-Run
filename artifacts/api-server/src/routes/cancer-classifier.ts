@@ -97,7 +97,7 @@ async function runMlPredictionFromCsv(
     analysis.missingGenesList = pred.missingGenes ?? [];
     analysis.imputationMethod = (pred.genesMissing ?? 0) > 0 ? "Training-set median imputation" : "None (all genes present)";
     analysis.dataQualityStatus = (pred.genesMissing ?? 0) > 10 ? "low-coverage" : (pred.genesMissing ?? 0) > 0 ? "imputed" : "complete";
-    analysis.modelVersion = result.modelVersion ?? "RandomForest v1.0";
+    analysis.modelVersion = result.modelVersion ?? "HistGradientBoosting v2.0";
     analysis.subtypeProbabilities = pred.subtypeProbabilities; // store full probability map
 
     // Fetch a per-sample explanation using the same real gene values (best effort)
@@ -132,7 +132,7 @@ const router: IRouter = Router();
 const CANCER_SUBTYPES = [
   { name: "BRCA (Breast)",      count: 42, percentage: 28.0, color: "#ec4899", fiveYearSurvival: 0.91, medianAge: 59 },
   { name: "LUAD (Lung Adeno)",  count: 35, percentage: 23.3, color: "#0079F2", fiveYearSurvival: 0.25, medianAge: 67 },
-  { name: "COAD (Colon)",       count: 28, percentage: 18.7, color: "#009118", fiveYearSurvival: 0.64, medianAge: 67 },
+  { name: "COAD (Colorectal)",  count: 28, percentage: 18.7, color: "#009118", fiveYearSurvival: 0.64, medianAge: 67 },
   { name: "GBM (Glioblastoma)", count: 24, percentage: 16.0, color: "#795EFF", fiveYearSurvival: 0.07, medianAge: 64 },
   { name: "PRAD (Prostate)",    count: 21, percentage: 14.0, color: "#f59e0b", fiveYearSurvival: 0.98, medianAge: 66 },
 ];
@@ -140,12 +140,12 @@ const CANCER_SUBTYPES = [
 const ANALYSES: Analysis[] = [
   { id: 1,  sampleId: "TCGA-A7-A0CE", dataSource: "TCGA Pan-Cancer Atlas",     status: "completed", cancerSubtype: "BRCA (Breast)",      confidenceScore: 0.947, processingTimeMs: 3421, createdAt: "2026-05-10T10:23:00Z", completedAt: "2026-05-10T10:23:03Z", patientAge: 52, patientGender: "F", tissueType: "Invasive Ductal Carcinoma", stage: "II",  geneCount: 20531 },
   { id: 2,  sampleId: "TCGA-55-6543", dataSource: "GEO Gene Expression Omnibus", status: "completed", cancerSubtype: "LUAD (Lung Adeno)", confidenceScore: 0.912, processingTimeMs: 2870, createdAt: "2026-05-11T11:05:00Z", completedAt: "2026-05-11T11:05:03Z", patientAge: 68, patientGender: "M", tissueType: "Adenocarcinoma",          stage: "III", geneCount: 20531 },
-  { id: 3,  sampleId: "TCGA-AA-3662", dataSource: "TCGA Pan-Cancer Atlas",     status: "completed", cancerSubtype: "COAD (Colon)",       confidenceScore: 0.883, processingTimeMs: 3102, createdAt: "2026-05-13T09:14:00Z", completedAt: "2026-05-13T09:14:03Z", patientAge: 71, patientGender: "M", tissueType: "Adenocarcinoma",          stage: "III", geneCount: 20531 },
+  { id: 3,  sampleId: "TCGA-AA-3662", dataSource: "TCGA Pan-Cancer Atlas",     status: "completed", cancerSubtype: "COAD (Colorectal)",  confidenceScore: 0.883, processingTimeMs: 3102, createdAt: "2026-05-13T09:14:00Z", completedAt: "2026-05-13T09:14:03Z", patientAge: 71, patientGender: "M", tissueType: "Adenocarcinoma",          stage: "III", geneCount: 20531 },
   { id: 4,  sampleId: "TCGA-02-0001", dataSource: "GDC Data Portal",           status: "completed", cancerSubtype: "GBM (Glioblastoma)", confidenceScore: 0.971, processingTimeMs: 2955, createdAt: "2026-05-14T13:30:00Z", completedAt: "2026-05-14T13:30:03Z", patientAge: 61, patientGender: "M", tissueType: "Glioblastoma",            stage: "IV",  geneCount: 20531 },
   { id: 5,  sampleId: "TCGA-CH-5741", dataSource: "TCGA Pan-Cancer Atlas",     status: "completed", cancerSubtype: "PRAD (Prostate)",    confidenceScore: 0.859, processingTimeMs: 3210, createdAt: "2026-05-15T08:45:00Z", completedAt: "2026-05-15T08:45:03Z", patientAge: 64, patientGender: "M", tissueType: "Adenocarcinoma",          stage: "I",   geneCount: 20531 },
   { id: 6,  sampleId: "TCGA-OL-A66J", dataSource: "GEO Gene Expression Omnibus", status: "completed", cancerSubtype: "BRCA (Breast)",    confidenceScore: 0.934, processingTimeMs: 3321, createdAt: "2026-05-16T10:00:00Z", completedAt: "2026-05-16T10:00:03Z", patientAge: 48, patientGender: "F", tissueType: "Triple Negative",         stage: "II",  geneCount: 20531 },
   { id: 7,  sampleId: "TCGA-4B-A93V", dataSource: "NCBI GEO",                  status: "completed", cancerSubtype: "LUAD (Lung Adeno)", confidenceScore: 0.901, processingTimeMs: 2900, createdAt: "2026-05-17T11:20:00Z", completedAt: "2026-05-17T11:20:03Z", patientAge: 73, patientGender: "F", tissueType: "Squamous Cell",          stage: "II",  geneCount: 20531 },
-  { id: 8,  sampleId: "TCGA-D5-6930", dataSource: "GDC Data Portal",           status: "completed", cancerSubtype: "COAD (Colon)",       confidenceScore: 0.919, processingTimeMs: 2780, createdAt: "2026-05-18T14:00:00Z", completedAt: "2026-05-18T14:00:03Z", patientAge: 58, patientGender: "F", tissueType: "Signet Ring",            stage: "IV",  geneCount: 20531 },
+  { id: 8,  sampleId: "TCGA-D5-6930", dataSource: "GDC Data Portal",           status: "completed", cancerSubtype: "COAD (Colorectal)",  confidenceScore: 0.919, processingTimeMs: 2780, createdAt: "2026-05-18T14:00:00Z", completedAt: "2026-05-18T14:00:03Z", patientAge: 58, patientGender: "F", tissueType: "Signet Ring",            stage: "IV",  geneCount: 20531 },
   { id: 9,  sampleId: "TCGA-HT-7693", dataSource: "TCGA Pan-Cancer Atlas",     status: "completed", cancerSubtype: "GBM (Glioblastoma)", confidenceScore: 0.963, processingTimeMs: 3010, createdAt: "2026-05-19T09:00:00Z", completedAt: "2026-05-19T09:00:03Z", patientAge: 55, patientGender: "M", tissueType: "IDH-mutant",             stage: "IV",  geneCount: 20531 },
   { id: 10, sampleId: "TCGA-EJ-A7NL", dataSource: "TCGA Pan-Cancer Atlas",     status: "completed", cancerSubtype: "PRAD (Prostate)",    confidenceScore: 0.877, processingTimeMs: 3180, createdAt: "2026-05-20T10:30:00Z", completedAt: "2026-05-20T10:30:03Z", patientAge: 62, patientGender: "M", tissueType: "Gleason 7",              stage: "II",  geneCount: 20531 },
   { id: 11, sampleId: "TCGA-BH-A0B3", dataSource: "GEO Gene Expression Omnibus", status: "processing", cancerSubtype: null, confidenceScore: null, processingTimeMs: null, createdAt: "2026-05-22T09:10:00Z", completedAt: null, patientAge: 54, patientGender: "F", tissueType: "IDC", stage: null, geneCount: null },
@@ -156,16 +156,16 @@ const BIOMARKERS = [
   { geneId: "ENSG00000141736", geneName: "ERBB2",   expressionLevel: 8.42,  significance: 0.0001, cancerSubtype: "BRCA (Breast)",      chromosome: "17q12",    function: "Receptor tyrosine kinase; HER2 amplification driver" },
   { geneId: "ENSG00000121879", geneName: "PIK3CA",  expressionLevel: 6.81,  significance: 0.0003, cancerSubtype: "BRCA (Breast)",      chromosome: "3q26.32",  function: "PI3K catalytic subunit; activates AKT/mTOR pathway" },
   { geneId: "ENSG00000171862", geneName: "PTEN",    expressionLevel: -4.23, significance: 0.0008, cancerSubtype: "GBM (Glioblastoma)", chromosome: "10q23.31", function: "Phosphatase and tensin homolog; tumour suppressor" },
-  { geneId: "ENSG00000157764", geneName: "BRAF",    expressionLevel: 5.67,  significance: 0.0012, cancerSubtype: "COAD (Colon)",       chromosome: "7q34",     function: "Serine/threonine kinase; MAPK/ERK pathway activation" },
+  { geneId: "ENSG00000157764", geneName: "BRAF",    expressionLevel: 5.67,  significance: 0.0012, cancerSubtype: "COAD (Colorectal)",  chromosome: "7q34",     function: "Serine/threonine kinase; MAPK/ERK pathway activation" },
   { geneId: "ENSG00000133703", geneName: "KRAS",    expressionLevel: 7.11,  significance: 0.0005, cancerSubtype: "LUAD (Lung Adeno)",  chromosome: "12p12.1",  function: "GTPase; mediates cell proliferation and survival" },
-  { geneId: "ENSG00000168036", geneName: "CTNNB1",  expressionLevel: 4.95,  significance: 0.0021, cancerSubtype: "COAD (Colon)",       chromosome: "3p22.1",   function: "Wnt/β-catenin pathway transcriptional activator" },
+  { geneId: "ENSG00000168036", geneName: "CTNNB1",  expressionLevel: 4.95,  significance: 0.0021, cancerSubtype: "COAD (Colorectal)",  chromosome: "3p22.1",   function: "Wnt/β-catenin pathway transcriptional activator" },
   { geneId: "ENSG00000012048", geneName: "BRCA1",   expressionLevel: -6.34, significance: 0.0002, cancerSubtype: "BRCA (Breast)",      chromosome: "17q21.31", function: "DNA damage repair; BRCA1/2 mutation in hereditary breast cancer" },
   { geneId: "ENSG00000139618", geneName: "BRCA2",   expressionLevel: -5.88, significance: 0.0004, cancerSubtype: "BRCA (Breast)",      chromosome: "13q12.3",  function: "Homologous recombination repair; tumour suppressor" },
   { geneId: "ENSG00000146648", geneName: "EGFR",    expressionLevel: 9.12,  significance: 0.0001, cancerSubtype: "LUAD (Lung Adeno)",  chromosome: "7p11.2",   function: "EGF receptor; drives cell proliferation in NSCLC" },
   { geneId: "ENSG00000213281", geneName: "NRAS",    expressionLevel: 3.74,  significance: 0.0031, cancerSubtype: "GBM (Glioblastoma)", chromosome: "1p13.2",   function: "GTPase; RAS/MAPK signaling activation" },
   { geneId: "ENSG00000141510", geneName: "TP53",    expressionLevel: -7.21, significance: 0.0001, cancerSubtype: "LUAD (Lung Adeno)",  chromosome: "17p13.1",  function: "Master tumour suppressor; cell cycle regulation" },
   { geneId: "ENSG00000105173", geneName: "CCND1",   expressionLevel: 5.43,  significance: 0.0015, cancerSubtype: "BRCA (Breast)",      chromosome: "11q13.3",  function: "Cyclin D1; CDK4/6 activator in cell cycle" },
-  { geneId: "ENSG00000136997", geneName: "MYC",     expressionLevel: 6.77,  significance: 0.0007, cancerSubtype: "COAD (Colon)",       chromosome: "8q24.21",  function: "Proto-oncogene; transcription factor for cell growth" },
+  { geneId: "ENSG00000136997", geneName: "MYC",     expressionLevel: 6.77,  significance: 0.0007, cancerSubtype: "COAD (Colorectal)",  chromosome: "8q24.21",  function: "Proto-oncogene; transcription factor for cell growth" },
   { geneId: "ENSG00000197122", geneName: "SRC",     expressionLevel: 4.12,  significance: 0.0038, cancerSubtype: "BRCA (Breast)",      chromosome: "20q11.23", function: "Non-receptor tyrosine kinase; invasion and metastasis" },
   { geneId: "ENSG00000163939", geneName: "PBRM1",   expressionLevel: -3.85, significance: 0.0044, cancerSubtype: "GBM (Glioblastoma)", chromosome: "3p21.1",   function: "SWI/SNF chromatin remodeling; tumour suppressor" },
 ];
@@ -190,7 +190,7 @@ router.get("/dashboard/summary", async (_req: Request, res: Response): Promise<v
     totalAnalyses: ANALYSES.length,
     completedAnalyses: completed.length,
     pendingAnalyses: pending,
-    overallAccuracy: 0.924,
+    overallAccuracy: 0.8652,
     totalBiomarkersFound: BIOMARKERS.length,
     totalSamples: 150,
     avgProcessingTimeMs: 3046,
@@ -198,7 +198,7 @@ router.get("/dashboard/summary", async (_req: Request, res: Response): Promise<v
     subtypeDistribution: CANCER_SUBTYPES,
     weeklyTrend,
     systemHealth: {
-      modelVersion: "GNN-AE v2.4.1",
+      modelVersion: "HistGradientBoosting v2.0",
       gpuUtilization: 0.67,
       memoryUsage: 0.54,
       uptime: "14d 7h 32m",
@@ -290,14 +290,14 @@ router.get("/analyses/:id/results", async (req: Request, res: Response): Promise
   const treatmentMap: Record<string, string[]> = {
     "BRCA (Breast)":      ["Trastuzumab (HER2+)", "Palbociclib + Letrozole (HR+)", "Pembrolizumab (TNBC)", "PARP inhibitors (BRCA1/2 mut)"],
     "LUAD (Lung Adeno)":  ["Osimertinib (EGFR mut)", "Alectinib (ALK+)", "Pembrolizumab + Chemo", "Bevacizumab + Erlotinib"],
-    "COAD (Colon)":       ["FOLFOX + Bevacizumab", "Cetuximab (KRAS WT)", "Pembrolizumab (MSI-H)", "FOLFIRI + Aflibercept"],
+    "COAD (Colorectal)":  ["FOLFOX + Bevacizumab", "Cetuximab (KRAS WT)", "Pembrolizumab (MSI-H)", "FOLFIRI + Aflibercept"],
     "GBM (Glioblastoma)": ["Temozolomide + Radiotherapy", "Bevacizumab", "TTFields (Optune)", "Lomustine salvage"],
     "PRAD (Prostate)":    ["Enzalutamide", "Abiraterone + Prednisone", "Docetaxel", "Radium-223 (bone mets)"],
   };
   const sigMap: Record<string, string[]> = {
     "BRCA (Breast)":      ["Luminal A", "HER2-enriched", "Basal-like", "BRCA1/2 mutation"],
     "LUAD (Lung Adeno)":  ["EGFR exon 19 del", "ALK fusion", "ROS1 rearrangement", "KRAS G12C"],
-    "COAD (Colon)":       ["MSI-H", "CMS2", "RAS WT", "POLE mutation"],
+    "COAD (Colorectal)":  ["MSI-H", "CMS2", "RAS WT", "POLE mutation"],
     "GBM (Glioblastoma)": ["IDH-wildtype", "MGMT methylated", "EGFR amplified", "TERT promoter mut"],
     "PRAD (Prostate)":    ["AR signaling", "PTEN loss", "ETS fusion", "CDK12 mutation"],
   };
@@ -312,7 +312,7 @@ router.get("/analyses/:id/results", async (req: Request, res: Response): Promise
     missingGenesList: analysis.missingGenesList ?? [],
     imputationMethod: analysis.imputationMethod ?? "None (all genes present)",
     dataQualityStatus: analysis.dataQualityStatus ?? "complete",
-    modelVersion: analysis.modelVersion ?? "RandomForest v1.0",
+    modelVersion: analysis.modelVersion ?? "HistGradientBoosting v2.0",
     apiRequestId: analysis.apiRequestId ?? null,
     contribution: analysis.contribution ?? null,
     subtypeProbabilities: (() => {
@@ -427,7 +427,7 @@ router.get("/genomics/heatmap", async (_req: Request, res: Response): Promise<vo
 
 router.get("/genomics/pca", async (_req: Request, res: Response): Promise<void> => {
   const subtypeOffsets: Record<string, [number, number]> = {
-    "BRCA (Breast)": [-25, 15], "LUAD (Lung Adeno)": [20, -20], "COAD (Colon)": [10, 25],
+    "BRCA (Breast)": [-25, 15], "LUAD (Lung Adeno)": [20, -20], "COAD (Colorectal)": [10, 25],
     "GBM (Glioblastoma)": [-15, -25], "PRAD (Prostate)": [30, 10],
   };
   const points = ANALYSES.filter(a => a.status === "completed").map(a => {
@@ -456,11 +456,11 @@ router.get("/genomics/volcano", async (_req: Request, res: Response): Promise<vo
 
 router.get("/genomics/umap", async (_req: Request, res: Response): Promise<void> => {
   const clusterCenters: Record<string, [number, number]> = {
-    "BRCA (Breast)": [3, 7], "LUAD (Lung Adeno)": [-6, -3], "COAD (Colon)": [7, -5],
+    "BRCA (Breast)": [3, 7], "LUAD (Lung Adeno)": [-6, -3], "COAD (Colorectal)": [7, -5],
     "GBM (Glioblastoma)": [-4, 6], "PRAD (Prostate)": [1, -8],
   };
   const subtypeToCluster: Record<string, number> = {
-    "BRCA (Breast)": 0, "LUAD (Lung Adeno)": 1, "COAD (Colon)": 2, "GBM (Glioblastoma)": 3, "PRAD (Prostate)": 4,
+    "BRCA (Breast)": 0, "LUAD (Lung Adeno)": 1, "COAD (Colorectal)": 2, "GBM (Glioblastoma)": 3, "PRAD (Prostate)": 4,
   };
   const points = ANALYSES.filter(a => a.status === "completed").map(a => {
     const [cx, cy] = clusterCenters[a.cancerSubtype!] ?? [0, 0];
@@ -512,7 +512,7 @@ router.get("/survival/kaplan-meier", async (_req: Request, res: Response): Promi
   const params = [
     { subtype: "BRCA (Breast)",      color: "#ec4899", lambda: 0.007, n: 87 },
     { subtype: "LUAD (Lung Adeno)",  color: "#0079F2", lambda: 0.035, n: 73 },
-    { subtype: "COAD (Colon)",       color: "#009118", lambda: 0.015, n: 61 },
+    { subtype: "COAD (Colorectal)", color: "#009118", lambda: 0.015, n: 61 },
     { subtype: "GBM (Glioblastoma)", color: "#795EFF", lambda: 0.085, n: 54 },
     { subtype: "PRAD (Prostate)",    color: "#f59e0b", lambda: 0.003, n: 48 },
   ];
@@ -529,7 +529,7 @@ router.get("/survival/kaplan-meier", async (_req: Request, res: Response): Promi
   const medianSurvival = [
     { subtype: "BRCA (Breast)",      months: 98.4, lower95: 88.2, upper95: 112.1 },
     { subtype: "LUAD (Lung Adeno)",  months: 19.8, lower95: 16.4, upper95: 24.3  },
-    { subtype: "COAD (Colon)",       months: 46.2, lower95: 38.7, upper95: 56.8  },
+    { subtype: "COAD (Colorectal)", months: 46.2, lower95: 38.7, upper95: 56.8  },
     { subtype: "GBM (Glioblastoma)", months: 8.1,  lower95: 6.4,  upper95: 10.4  },
     { subtype: "PRAD (Prostate)",    months: 231.0, lower95: 198.0, upper95: 270.0 },
   ];
@@ -543,13 +543,13 @@ router.get("/drugs/sensitivity", async (_req: Request, res: Response): Promise<v
     { drugName: "Trastuzumab",   cancerSubtype: "BRCA (Breast)",      sensitivityScore: 0.91, resistanceScore: 0.09, evidence: "high",   mechanism: "HER2 targeted monoclonal antibody",    fdaApproved: true,  clinicalTrials: 48 },
     { drugName: "Osimertinib",   cancerSubtype: "LUAD (Lung Adeno)",  sensitivityScore: 0.88, resistanceScore: 0.12, evidence: "high",   mechanism: "EGFR T790M inhibitor",                 fdaApproved: true,  clinicalTrials: 37 },
     { drugName: "Bevacizumab",   cancerSubtype: "GBM (Glioblastoma)", sensitivityScore: 0.61, resistanceScore: 0.39, evidence: "medium", mechanism: "VEGF-A neutralizing antibody",          fdaApproved: true,  clinicalTrials: 29 },
-    { drugName: "Cetuximab",     cancerSubtype: "COAD (Colon)",       sensitivityScore: 0.74, resistanceScore: 0.26, evidence: "high",   mechanism: "EGFR antagonist (KRAS WT only)",       fdaApproved: true,  clinicalTrials: 31 },
+    { drugName: "Cetuximab",     cancerSubtype: "COAD (Colorectal)",  sensitivityScore: 0.74, resistanceScore: 0.26, evidence: "high",   mechanism: "EGFR antagonist (KRAS WT only)",       fdaApproved: true,  clinicalTrials: 31 },
     { drugName: "Enzalutamide",  cancerSubtype: "PRAD (Prostate)",    sensitivityScore: 0.84, resistanceScore: 0.16, evidence: "high",   mechanism: "Androgen receptor signaling inhibitor", fdaApproved: true,  clinicalTrials: 22 },
     { drugName: "Palbociclib",   cancerSubtype: "BRCA (Breast)",      sensitivityScore: 0.79, resistanceScore: 0.21, evidence: "high",   mechanism: "CDK4/6 inhibitor",                     fdaApproved: true,  clinicalTrials: 41 },
     { drugName: "Pembrolizumab", cancerSubtype: "LUAD (Lung Adeno)",  sensitivityScore: 0.72, resistanceScore: 0.28, evidence: "high",   mechanism: "PD-1 checkpoint inhibitor",            fdaApproved: true,  clinicalTrials: 55 },
     { drugName: "Temozolomide",  cancerSubtype: "GBM (Glioblastoma)", sensitivityScore: 0.55, resistanceScore: 0.45, evidence: "high",   mechanism: "Alkylating agent (DNA damage)",        fdaApproved: true,  clinicalTrials: 18 },
     { drugName: "Olaparib",      cancerSubtype: "BRCA (Breast)",      sensitivityScore: 0.85, resistanceScore: 0.15, evidence: "high",   mechanism: "PARP inhibitor (BRCA1/2 mut)",         fdaApproved: true,  clinicalTrials: 33 },
-    { drugName: "Vemurafenib",   cancerSubtype: "COAD (Colon)",       sensitivityScore: 0.58, resistanceScore: 0.42, evidence: "medium", mechanism: "BRAF V600E inhibitor",                 fdaApproved: false, clinicalTrials: 14 },
+    { drugName: "Vemurafenib",   cancerSubtype: "COAD (Colorectal)",  sensitivityScore: 0.58, resistanceScore: 0.42, evidence: "medium", mechanism: "BRAF V600E inhibitor",                 fdaApproved: false, clinicalTrials: 14 },
   ]);
 });
 

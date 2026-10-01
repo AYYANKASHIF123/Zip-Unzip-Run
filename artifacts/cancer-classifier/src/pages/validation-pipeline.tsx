@@ -1,9 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader, SectionTitle, BADGE_COLORS } from "@/components/shared/PageHeader";
 import { PrototypeBanner } from "@/components/shared/PrototypeBanner";
-import { ClipboardCheck, Upload, CheckCircle2, Download } from "lucide-react";
+import { ClipboardCheck, Upload } from "lucide-react";
 
 const STEPS = [
   "Upload external validation dataset",
@@ -12,13 +11,6 @@ const STEPS = [
   "Run batch prediction",
   "Calculate accuracy & F1-score",
   "Generate confusion matrix",
-];
-
-const METRICS = [
-  { label: "Accuracy", value: "88.2%" },
-  { label: "F1-Score (macro)", value: "0.86" },
-  { label: "Precision", value: "0.87" },
-  { label: "Recall", value: "0.85" },
 ];
 
 export default function ValidationPipeline() {
@@ -31,7 +23,7 @@ export default function ValidationPipeline() {
           description="Upload an external validation dataset and evaluate the model's performance against it."
           badges={[{ label: "Prototype Validation", color: BADGE_COLORS.prototype }]}
         />
-        <PrototypeBanner text="This prototype reuses the platform's existing model performance metrics to demonstrate the validation workflow. It is not an independent, peer-reviewed external validation study." />
+        <PrototypeBanner text="Workflow sketch only: no external dataset has been uploaded or evaluated. The active model's cross-validation scores are not independent external validation." />
 
         <Card className="border-border/60">
           <CardContent className="pt-5 pb-5">
@@ -39,8 +31,8 @@ export default function ValidationPipeline() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
               {STEPS.map((s, i) => (
                 <div key={s} className="flex items-center gap-2 text-sm bg-secondary/30 rounded-md px-3 py-2">
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span>{i + 1}. {s}</span>
+                  <span className="text-xs font-semibold text-muted-foreground">{i + 1}.</span>
+                  <span>{s}</span>
                 </div>
               ))}
             </div>
@@ -54,18 +46,12 @@ export default function ValidationPipeline() {
         <Card className="border-border/60">
           <CardContent className="pt-5 pb-5">
             <div className="flex items-center justify-between mb-3">
-              <SectionTitle>Validation Result (Demo)</SectionTitle>
-              <Button size="sm" variant="outline"><Download className="w-3.5 h-3.5 mr-1" /> Export validation report</Button>
+              <SectionTitle>External Validation Status</SectionTitle>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {METRICS.map(m => (
-                <div key={m.label} className="bg-secondary/40 rounded-md py-3 text-center">
-                  <div className="text-lg font-bold">{m.value}</div>
-                  <div className="text-[10px] text-muted-foreground">{m.label}</div>
-                </div>
-              ))}
-            </div>
-            <Badge className={`${BADGE_COLORS.prototype} border-0 mt-3`}>Based on existing model metrics — prototype validation only</Badge>
+            <p className="text-sm text-muted-foreground">
+              Not evaluated. No external validation dataset has been uploaded or scored, so no external accuracy, F1, precision, or recall results are available.
+            </p>
+            <Badge className={`${BADGE_COLORS.prototype} border-0 mt-3`}>External validation results unavailable</Badge>
           </CardContent>
         </Card>
       </div>

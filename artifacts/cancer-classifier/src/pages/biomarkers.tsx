@@ -14,7 +14,7 @@ import { CSVLink } from "react-csv";
 import { Download, Search, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-const SUBTYPES = ["All", "BRCA (Breast)", "LUAD (Lung Adeno)", "COAD (Colon)", "GBM (Glioblastoma)", "PRAD (Prostate)"];
+const SUBTYPES = ["All", "BRCA (Breast)", "LUAD (Lung Adeno)", "COAD (Colorectal)", "GBM (Glioblastoma)", "PRAD (Prostate)"];
 const SORT_OPTIONS = ["Expression Level", "Significance (p-value)", "Gene Name"];
 
 export default function Biomarkers() {

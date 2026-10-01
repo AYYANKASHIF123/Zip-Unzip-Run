@@ -24,7 +24,7 @@ const BUSINESS_MODEL = [
 ];
 
 const ROADMAP_TO_MARKET = [
-  { phase: "Now", label: "FYP Prototype", desc: "Core classification, XAI, and reporting pipeline validated on synthetic data.", done: true },
+  { phase: "Now", label: "FYP Prototype", desc: "Core classifier trained on real TCGA PanCancer Atlas data; sample-ID quick classify still uses demo expression values.", done: true },
   { phase: "Next", label: "Clinical Data Partnership", desc: "Partner with a research hospital or biobank for real, de-identified expression cohorts.", done: false },
   { phase: "Next+1", label: "Regulatory Pathway", desc: "Pursue Software-as-a-Medical-Device (SaMD) classification guidance; begin validation studies.", done: false },
   { phase: "Later", label: "Commercial Pilot", desc: "Paid pilot with 2–3 research labs; expand gene panel; add EHR/LIMS integrations.", done: false },
@@ -174,7 +174,8 @@ export default function StartupVision() {
           <CardContent>
             <p className="text-xs text-amber-800 dark:text-amber-400 leading-relaxed">
               This page describes an aspirational direction, not a funded or incorporated company. The current system
-              is trained on synthetic data and is not clinically validated. Turning this into a real product would
+              is trained on real TCGA PanCancer Atlas data, but sample-ID quick classify uses demo expression values and
+              the model has not been clinically validated. Turning this into a real product would
               require a genomics data partnership, formal clinical validation studies, a regulatory strategy (e.g. SaMD
               guidance), and a data-governance/compliance framework (HIPAA/GDPR-equivalent) before any real patient
               data could be processed.

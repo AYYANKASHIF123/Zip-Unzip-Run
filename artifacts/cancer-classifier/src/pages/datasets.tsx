@@ -26,7 +26,7 @@ const statusStyles: Record<string, { icon: React.ReactNode; badge: string }> = {
 const SUBTYPE_COLORS: Record<string, string> = {
   "BRCA (Breast)":       "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400",
   "LUAD (Lung Adeno)":   "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  "COAD (Colon)":        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  "COAD (Colorectal)":   "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   "GBM (Glioblastoma)":  "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
   "PRAD (Prostate)":     "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 };
@@ -210,7 +210,7 @@ export default function Datasets() {
           <Alert className="border-primary/20 bg-primary/5">
             <Brain className="h-4 w-4 text-primary" />
             <AlertDescription className="flex items-center justify-between">
-              <span className="text-sm">Upload a gene expression CSV to run <strong>real ML predictions</strong> — a trained Random Forest classifies each sample into cancer subtypes with confidence scores.</span>
+              <span className="text-sm">Upload measured gene-expression data for <strong>real ML predictions</strong> — HistGradientBoosting v2 classifies each sample into cancer subtypes with confidence scores.</span>
               <Button size="sm" onClick={() => setUploadOpen(true)} className="ml-4 shrink-0">
                 <Upload className="w-3.5 h-3.5 mr-1.5" />
                 Upload & Predict

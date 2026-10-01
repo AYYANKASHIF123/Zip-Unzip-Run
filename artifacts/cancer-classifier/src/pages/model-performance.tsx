@@ -1,180 +1,129 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useGetModelPerformance, useGetConfusionMatrix } from "@workspace/api-client-react";
+import { useQuery } from "@tanstack/react-query";
 import { HeaderControls } from "@/components/layout/HeaderControls";
-import { KPICard } from "@/components/ui/kpi-card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatPercent, CHART_COLORS, CHART_COLOR_LIST, CustomTooltip, CustomLegend } from "@/lib/constants";
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from "recharts";
-import { CSVLink } from "react-csv";
-import { Download } from "lucide-react";
+import { Info, ShieldAlert } from "lucide-react";
+import { formatPercent } from "@/lib/constants";
+
+type ModelVersion = {
+  id: string;
+  name: string;
+  createdAt: string;
+  params: Record<string, number | string | null>;
+  cvAccuracy: number;
+  cvF1: number;
+  nGenes: number;
+  nSubtypes: number;
+  dataSource: string;
+  isActive: boolean;
+};
+
+type Registry = {
+  versions: ModelVersion[];
+  activeVersionId: string | null;
+};
 
 export default function ModelPerformance() {
-  const queryClient = useQueryClient();
-
-  const perfQuery = useGetModelPerformance();
-  const confQuery = useGetConfusionMatrix();
-
-  const loading = perfQuery.isLoading || confQuery.isLoading || perfQuery.isFetching || confQuery.isFetching;
-
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ["/api/metrics/model-performance"] });
-    queryClient.invalidateQueries({ queryKey: ["/api/metrics/confusion-matrix"] });
-  };
-
-  const perf = perfQuery.data;
-  const conf = confQuery.data;
-
-  // Transform confusion matrix for a heatmap-like display or table
-  // Recharts doesn't have a native heatmap, so we might just render a stylized table for the confusion matrix
-  const confusionData = conf?.matrix.map((row, i) => {
-    const obj: any = { actual: conf.labels[i] };
-    row.forEach((val, j) => {
-      obj[conf.labels[j]] = val;
-    });
-    return obj;
+  const registryQuery = useQuery<Registry>({
+    queryKey: ["/api/models/versions"],
+    queryFn: async () => {
+      const response = await fetch("/api/models/versions");
+      if (!response.ok) throw new Error("Could not load the active model metrics");
+      return response.json();
+    },
+    staleTime: 30_000,
   });
+  const versions = registryQuery.data?.versions ?? [];
+  const active = versions.find(version => version.isActive);
 
   return (
-    <div className="min-h-screen bg-background px-5 py-4 pt-[32px] pb-[32px] pl-[24px] pr-[24px]">
-      <div className="max-w-[1400px] mx-auto space-y-4">
+    <div className="min-h-screen bg-background px-6 py-8">
+      <div className="max-w-[1200px] mx-auto space-y-4">
         <HeaderControls
           title="Model Performance"
-          subtitle="Evaluation metrics and training history."
-          loading={loading}
-          onRefresh={handleRefresh}
+          subtitle="Cross-validation results reported by the active ML service model registry."
+          loading={registryQuery.isLoading}
+          onRefresh={() => registryQuery.refetch()}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <KPICard title="Overall Accuracy" value={perf ? formatPercent(perf.overallAccuracy * 100) : "0%"} loading={loading} color={CHART_COLORS.blue} />
-          <KPICard title="Overall Precision" value={perf ? formatPercent(perf.overallPrecision * 100) : "0%"} loading={loading} color={CHART_COLORS.purple} />
-          <KPICard title="Overall Recall" value={perf ? formatPercent(perf.overallRecall * 100) : "0%"} loading={loading} color={CHART_COLORS.green} />
-          <KPICard title="Overall F1-Score" value={perf ? formatPercent(perf.overallF1Score * 100) : "0%"} loading={loading} color={CHART_COLORS.pink} />
-        </div>
+        {registryQuery.isError && (
+          <Alert variant="destructive">
+            <AlertDescription>Model registry is unavailable. Refresh after the ML service is running.</AlertDescription>
+          </Alert>
+        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">Training History (Accuracy & Loss)</CardTitle>
-              {!loading && perf?.trainingHistory && (
-                <CSVLink
-                  data={perf.trainingHistory}
-                  filename="training-history.csv"
-                  className="print:hidden flex items-center justify-center w-[26px] h-[26px] rounded-[6px] transition-colors hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </CSVLink>
-              )}
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <Skeleton className="w-full h-[300px]" />
-              ) : (
-                <ResponsiveContainer width="100%" height={300} debounce={0}>
-                  <LineChart data={perf?.trainingHistory}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="epoch" fontSize={12} opacity={0.6} />
-                    <YAxis yAxisId="left" fontSize={12} opacity={0.8} />
-                    <YAxis yAxisId="right" orientation="right" fontSize={12} opacity={0.8} />
-                    <Tooltip content={<CustomTooltip />} isAnimationActive={false} />
-                    <Legend content={<CustomLegend />} />
-                    <Line yAxisId="left" type="monotone" dataKey="trainAccuracy" name="Train Acc" stroke={CHART_COLORS.blue} strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line yAxisId="left" type="monotone" dataKey="valAccuracy" name="Val Acc" stroke={CHART_COLORS.purple} strokeWidth={2} dot={false} isAnimationActive={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="trainLoss" name="Train Loss" stroke={CHART_COLORS.red} strokeWidth={2} strokeDasharray="5 5" dot={false} isAnimationActive={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
+        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-900/10 dark:border-amber-800">
+          <ShieldAlert className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-sm text-amber-800 dark:text-amber-300">
+            Research benchmark only. These cross-validation results are not external validation, clinical performance,
+            or evidence for diagnosis or treatment decisions.
+          </AlertDescription>
+        </Alert>
 
-          <Card>
-            <CardHeader className="px-4 pt-4 pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">Per-Subtype Metrics (F1-Score)</CardTitle>
-              {!loading && perf?.perSubtypeMetrics && (
-                <CSVLink
-                  data={perf.perSubtypeMetrics}
-                  filename="subtype-metrics.csv"
-                  className="print:hidden flex items-center justify-center w-[26px] h-[26px] rounded-[6px] transition-colors hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </CSVLink>
-              )}
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <Skeleton className="w-full h-[300px]" />
-              ) : (
-                <ResponsiveContainer width="100%" height={300} debounce={0}>
-                  <BarChart data={perf?.perSubtypeMetrics}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} vertical={false} />
-                    <XAxis dataKey="subtype" fontSize={12} opacity={0.6} />
-                    <YAxis tickFormatter={(v) => formatPercent(v * 100)} fontSize={12} opacity={0.8} />
-                    <Tooltip content={<CustomTooltip />} isAnimationActive={false} cursor={false} />
-                    <Bar dataKey="f1Score" name="F1-Score" fill={CHART_COLORS.blue} radius={[4, 4, 0, 0]} isAnimationActive={false}>
-                      {perf?.perSubtypeMetrics.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={CHART_COLOR_LIST[index % CHART_COLOR_LIST.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {registryQuery.isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton className="h-40" /><Skeleton className="h-40" />
+          </div>
+        ) : active ? (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">Active: {active.name}</Badge>
+              <Badge variant="outline">{active.nGenes} genes</Badge>
+              <Badge variant="outline">{active.nSubtypes} subtypes</Badge>
+              <Badge variant="outline">5-fold cross-validation</Badge>
+            </div>
 
-        <Card>
-          <CardHeader className="px-4 pt-4 pb-2 flex flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Confusion Matrix</CardTitle>
-            {!loading && confusionData && (
-                <CSVLink
-                  data={confusionData}
-                  filename="confusion-matrix.csv"
-                  className="print:hidden flex items-center justify-center w-[26px] h-[26px] rounded-[6px] transition-colors hover:bg-black/5 dark:hover:bg-white/10 text-muted-foreground"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </CSVLink>
-              )}
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-               <Skeleton className="w-full h-[300px]" />
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-border text-sm text-center">
-                  <thead>
-                    <tr>
-                      <th className="border border-border p-2 bg-muted/50 w-24">True \ Pred</th>
-                      {conf?.labels.map((label) => (
-                        <th key={label} className="border border-border p-2 bg-muted/50 font-medium">{label}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {conf?.matrix.map((row, i) => (
-                      <tr key={conf.labels[i]}>
-                        <th className="border border-border p-2 bg-muted/50 font-medium text-left">{conf.labels[i]}</th>
-                        {row.map((val, j) => {
-                          const isDiagonal = i === j;
-                          // simple heat color
-                          const alpha = Math.min(val / 100, 1) * 0.8;
-                          const bgColor = isDiagonal ? `rgba(0, 145, 24, ${alpha + 0.1})` : `rgba(166, 8, 8, ${alpha})`;
-                          const textColor = alpha > 0.5 ? '#fff' : 'inherit';
-                          
-                          return (
-                            <td key={j} className="border border-border p-3 font-mono" style={{ backgroundColor: val > 0 ? bgColor : undefined, color: textColor }}>
-                              {val}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Card>
+                <CardContent className="pt-5 pb-5">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">CV Accuracy</div>
+                  <div className="text-3xl font-bold text-primary mt-1">{formatPercent(active.cvAccuracy * 100)}</div>
+                  <p className="text-xs text-muted-foreground mt-2">Mean accuracy across stratified folds.</p>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="pt-5 pb-5">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">CV Weighted F1</div>
+                  <div className="text-3xl font-bold text-primary mt-1">{formatPercent(active.cvF1 * 100)}</div>
+                  <p className="text-xs text-muted-foreground mt-2">Weighted F1 across stratified folds.</p>
+                </CardContent>
+              </Card>
+            </div>
 
+            <Card>
+              <CardHeader className="px-4 pt-4 pb-2">
+                <CardTitle className="text-base">Evaluation details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {[
+                  ["Model", active.name],
+                  ["Training source", active.dataSource === "real_tcga_pancan_atlas" ? "Real TCGA PanCancer Atlas mRNA expression data (cBioPortal)" : active.dataSource],
+                  ["Training cohort", "3,330 samples across BRCA, LUAD, COADREAD, GBM, and PRAD"],
+                  ["Validation design", "5-fold stratified cross-validation; mean fold scores"],
+                  ["Model inputs", `${active.nGenes} curated gene-expression features`],
+                  ["Model version date", new Date(active.createdAt).toLocaleString()],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex flex-col sm:flex-row sm:justify-between gap-1 border-b border-border/50 pb-2 last:border-0">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className="font-medium sm:text-right">{value}</span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription className="text-sm">
+                Per-subtype scores, ROC-AUC, and confusion matrices are not supplied by the active model registry, so
+                this screen does not display the previous prototype’s simulated charts.
+              </AlertDescription>
+            </Alert>
+          </>
+        ) : (
+          <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">No active model is registered.</CardContent></Card>
+        )}
       </div>
     </div>
   );

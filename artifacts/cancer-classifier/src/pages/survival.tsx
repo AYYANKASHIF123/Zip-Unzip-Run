@@ -12,7 +12,7 @@ import { useMemo } from "react";
 const SUBTYPE_COLORS: Record<string, string> = {
   "BRCA (Breast)":      "#ec4899",
   "LUAD (Lung Adeno)":  "#0079F2",
-  "COAD (Colon)":       "#009118",
+  "COAD (Colorectal)":  "#009118",
   "GBM (Glioblastoma)": "#795EFF",
   "PRAD (Prostate)":    "#f59e0b",
 };

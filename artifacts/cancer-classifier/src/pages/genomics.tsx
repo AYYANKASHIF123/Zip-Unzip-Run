@@ -14,7 +14,7 @@ import { CHART_COLORS, CHART_COLOR_LIST, formatPercent } from "@/lib/constants";
 const SUBTYPE_COLORS: Record<string, string> = {
   "BRCA (Breast)":      CHART_COLORS.pink,
   "LUAD (Lung Adeno)":  CHART_COLORS.blue,
-  "COAD (Colon)":       CHART_COLORS.green,
+  "COAD (Colorectal)":  CHART_COLORS.green,
   "GBM (Glioblastoma)": CHART_COLORS.purple,
   "PRAD (Prostate)":    "#f59e0b",
 };

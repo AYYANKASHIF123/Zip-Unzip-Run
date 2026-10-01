@@ -12,17 +12,17 @@ import {
 
 const STATS = [
   { label: "Cancer Subtypes", value: "5", color: "text-blue-500" },
-  { label: "Genes Processed", value: "20,531", color: "text-purple-500" },
-  { label: "Model Accuracy", value: "92.4%", color: "text-green-500" },
-  { label: "Samples Analyzed", value: "1,650+", color: "text-pink-500" },
-  { label: "ML Models", value: "7", color: "text-amber-500" },
+  { label: "Model Input Genes", value: "50", color: "text-purple-500" },
+  { label: "5-fold CV Accuracy", value: "86.52%", color: "text-green-500" },
+  { label: "Training Samples", value: "3,330", color: "text-pink-500" },
+  { label: "Active ML Model", value: "1", color: "text-amber-500" },
   { label: "Biomarkers Found", value: "15+", color: "text-cyan-500" },
 ];
 
 const FEATURES = [
-  { icon: Brain,      title: "AI Classification",       desc: "Multi-class cancer subtype prediction using Graph Neural Network Autoencoder (GNN-AE) with 92.4% accuracy across 5 cancer types." },
+  { icon: Brain,      title: "AI Classification",       desc: "HistGradientBoosting v2 predicts five cancer subtypes from a curated 50-gene expression panel. Its 5-fold CV accuracy is 86.52% on real TCGA-derived training data." },
   { icon: Microscope, title: "Genomics Explorer",       desc: "Interactive heatmaps, PCA plots, UMAP clustering, and volcano plots for deep exploration of gene expression patterns." },
-  { icon: BarChart3,  title: "Explainable AI",          desc: "SHAP-style feature importance, sample-level explanations, and top contributing gene identification for every prediction." },
+  { icon: BarChart3,  title: "Explainable AI",          desc: "Permutation importance and class-mean delta provide global gene rankings and approximate sample-level contribution context. This is not SHAP." },
   { icon: Target,     title: "Biomarker Discovery",     desc: "Statistical analysis to identify and rank potential biomarker candidates with p-value scoring and expression profiling." },
   { icon: FlaskConical,"title": "Drug Sensitivity",    desc: "Research-grade drug sensitivity exploration based on gene expression profiles, mapped against established drug-target databases." },
   { icon: Network,    title: "Survival Analysis",       desc: "Kaplan-Meier curves, median OS estimation, and gene-based survival grouping for all 5 supported cancer subtypes." },
@@ -41,8 +41,8 @@ const TECH_STACK = [
   { layer: "Frontend",        tech: "React 18 · TypeScript · Vite · shadcn/ui · Recharts · TanStack Query",  icon: Code2   },
   { layer: "API Layer",       tech: "Express 5 · OpenAPI 3.0 · Zod validation · Orval codegen",              icon: Server  },
   { layer: "Data Layer",      tech: "PostgreSQL · Drizzle ORM · Drizzle-Zod · SQLite (local dev)",           icon: Database },
-  { layer: "ML Models",       tech: "GNN-AE · Random Forest · SVM · Gradient Boosting · Neural Network",     icon: Brain   },
-  { layer: "Explainability",  tech: "SHAP-style feature importance · Permutation importance · Coefficient XAI", icon: Layers },
+  { layer: "ML Model",        tech: "HistGradientBoosting v2 · scikit-learn · FastAPI",                        icon: Brain   },
+  { layer: "Explainability",  tech: "Permutation importance · Class-mean delta · Not SHAP",                     icon: Layers },
   { layer: "Infrastructure",  tech: "pnpm workspaces · Node 24 · TypeScript 5.9 · esbuild",                  icon: Zap     },
 ];
 
@@ -125,8 +125,9 @@ export default function ProjectOverview() {
             </p>
             <div className="space-y-2 mt-2">
               {[
-                "GNN-AE model achieving 92.4% accuracy across 5 subtypes",
-                "SHAP-style explainability for every prediction",
+                "HistGradientBoosting v2 trained on 3,330 real TCGA PanCancer Atlas samples",
+                "86.52% 5-fold CV accuracy and 86.29% weighted F1",
+                "Permutation importance + class-mean delta explanations (not SHAP)",
                 "Interactive genomics visualisations (heatmap, PCA, UMAP, volcano)",
                 "Integrated survival analysis and drug sensitivity research tools",
                 "Automated preprocessing pipeline with quality scoring",
@@ -263,7 +264,7 @@ export default function ProjectOverview() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
               { label: "Complete",     color: "bg-green-500",  items: ["Dashboard & analytics","Gene expression heatmap, PCA, UMAP","Kaplan-Meier survival analysis","Drug sensitivity explorer","Biomarker discovery","Pipeline monitor","Reports & notifications","Audit logs & role-based access"] },
-              { label: "Demo Data",    color: "bg-amber-500",  items: ["GNN-AE model (simulated scoring)","SHAP explanations (importance-based approx.)","TCGA sample dataset integration","Drug–target correlation engine"] },
+              { label: "Research Prototype", color: "bg-amber-500", items: ["Real TCGA-derived training data for active HistGradientBoosting v2","Synthetic values used by sample-ID quick classify; use CSV upload for measured expression values","Exploratory dashboards and non-ML insights may contain demonstration data","No independent clinical validation or diagnosis use"] },
               { label: "Roadmap",      color: "bg-blue-500",   items: ["Real-time model training (server-side)","Multi-omics integration","Cloud PostgreSQL + auth","PPI network graph visualisation","Institutional dashboard & team workspaces"] },
             ].map(col => (
               <div key={col.label} className="space-y-2">

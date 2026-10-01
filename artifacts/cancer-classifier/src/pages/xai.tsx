@@ -21,7 +21,7 @@ import { formatPercent } from "@/lib/constants";
 const SUBTYPE_COLORS: Record<string, string> = {
   "BRCA (Breast)":      "#ec4899",
   "LUAD (Lung Adeno)":  "#0079F2",
-  "COAD (Colon)":       "#009118",
+  "COAD (Colorectal)":  "#009118",
   "GBM (Glioblastoma)": "#795EFF",
   "PRAD (Prostate)":    "#f59e0b",
 };
@@ -63,8 +63,8 @@ function dominantSubtype(gene: ImportanceGene): string {
 export default function ExplainableAI() {
   const [selectedId, setSelectedId] = useState<string>("");
 
-  // ── Global importance from RF ────────────────────────────────────────────
-  const importanceQuery = useQuery<{ genes: ImportanceGene[]; method: string; nTrees: number }>({
+  // ── Global importance from the active ML service ──────────────────────────
+  const importanceQuery = useQuery<{ genes: ImportanceGene[]; method: string; model: string }>({
     queryKey: ["/api/xai/importance"],
     queryFn: () => fetch("/api/xai/importance").then(r => r.json()),
     staleTime: 5 * 60_000,
@@ -132,15 +132,15 @@ export default function ExplainableAI() {
       <div className="max-w-[1400px] mx-auto space-y-4">
         <HeaderControls
           title="Explainable AI"
-          subtitle="Real Random Forest feature importances and per-sample prediction explanations."
+          subtitle="Active HistGradientBoosting v2 explanations from the real ML service."
         />
 
         <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/10 dark:border-blue-800">
           <Info className="h-4 w-4 text-blue-500" />
           <AlertDescription className="text-sm text-blue-800 dark:text-blue-300">
-            <strong>Method:</strong> Global importance uses MDI (Mean Decrease in Impurity) from the 200-tree Random Forest.
-            Per-sample contributions are computed as <code className="font-mono text-xs">importance × (scaled_value − class_mean)</code>,
-            where positive values indicate the gene pushes toward the predicted subtype.
+            <strong>Method:</strong> Global importance uses permutation importance from HistGradientBoosting v2.
+            Per-sample contributions use <code className="font-mono text-xs">permutation_importance × (scaled_value − class_mean)</code>,
+            where positive values indicate the gene is above the predicted subtype's class pattern. This is not SHAP.
           </AlertDescription>
         </Alert>
 
@@ -156,7 +156,7 @@ export default function ExplainableAI() {
             <Card>
               <CardHeader className="px-4 pt-4 pb-2 flex flex-row items-center justify-between space-y-0">
                 <div>
-                  <CardTitle className="text-base">Top 15 Genes — RF Feature Importance (MDI)</CardTitle>
+                    <CardTitle className="text-base">Top 15 Genes — Permutation Importance</CardTitle>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Blue = gene is primarily upregulated in its dominant subtype · Red = primarily downregulated
                   </p>
@@ -204,7 +204,7 @@ export default function ExplainableAI() {
                           return (
                             <div className="bg-popover border border-border px-3 py-2 rounded-md shadow-md text-sm">
                               <p className="font-semibold font-mono">{d.gene}</p>
-                              <p className="text-muted-foreground">MDI importance: <span className="font-bold text-foreground">{d.importance.toFixed(5)}</span></p>
+                               <p className="text-muted-foreground">Permutation score: <span className="font-bold text-foreground">{d.importance.toFixed(5)}</span></p>
                               <p className="text-muted-foreground">
                                 Dominant in: <span className="font-medium" style={{ color: SUBTYPE_COLORS[d.dominantSubtype] }}>{d.dominantSubtype}</span>
                               </p>
@@ -213,7 +213,7 @@ export default function ExplainableAI() {
                           );
                         }}
                       />
-                      <Bar dataKey="importance" name="MDI Importance" radius={[0, 4, 4, 0]} isAnimationActive={false} maxBarSize={24}>
+                       <Bar dataKey="importance" name="Permutation Importance" radius={[0, 4, 4, 0]} isAnimationActive={false} maxBarSize={24}>
                         {globalChartData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                       </Bar>
                     </BarChart>
@@ -290,9 +290,9 @@ export default function ExplainableAI() {
                   </div>
                   <div className="space-y-2 text-sm">
                     {[
-                      { label: "Model",        value: "Random Forest v1.0" },
-                      { label: "XAI Method",   value: "MDI + Class-Mean Δ" },
-                      { label: "Trees",         value: importanceQuery.data ? `${importanceQuery.data.nTrees}` : "200" },
+                       { label: "Model",        value: importanceQuery.data?.model ?? "HistGradientBoosting v2.0" },
+                       { label: "XAI Method",   value: "Permutation + Class-Mean Δ" },
+                       { label: "Data source",  value: "Real TCGA PanCancer Atlas" },
                       { label: "Features",      value: `${genes.length} genes` },
                       { label: "Top Gene",      value: genes[0]?.gene ?? "—" },
                       { label: "Top Importance",value: genes[0] ? genes[0].importance.toFixed(5) : "—" },
@@ -410,7 +410,7 @@ export default function ExplainableAI() {
                       </BarChart>
                     </ResponsiveContainer>
                     <p className="text-xs text-center text-muted-foreground mt-1">
-                      Showing top 15 genes by |contribution|. Formula: importance × (scaled_value − class_mean).
+                       Showing top 15 genes by |contribution|. Formula: permutation importance × (scaled_value − class_mean).
                     </p>
                   </>
                 )}
@@ -468,7 +468,7 @@ export default function ExplainableAI() {
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     For sample <strong className="font-mono">{explanation.sampleId}</strong> (
-                    {explanation.dataSource}), the Random Forest predicts{" "}
+                     {explanation.dataSource}), HistGradientBoosting v2 predicts{" "}
                     <strong style={{ color: subtypeColor }}>{explanation.predictedSubtype}</strong> with{" "}
                     <strong>{formatPercent(explanation.confidenceScore * 100)}</strong> confidence.{" "}
                     The strongest supporting genes are{" "}
@@ -493,7 +493,7 @@ export default function ExplainableAI() {
               <CardHeader className="px-4 pt-4 pb-2 flex flex-row items-center justify-between space-y-0">
                 <div>
                   <CardTitle className="text-base">All 50 Genes — Full Importance Ranking</CardTitle>
-                  <p className="text-xs text-muted-foreground mt-0.5">Sorted by MDI importance. Per-class means are in standard-scaled space.</p>
+                     <p className="text-xs text-muted-foreground mt-0.5">Sorted by permutation importance. Per-class means are in standard-scaled space.</p>
                 </div>
                 {genes.length > 0 && (
                   <CSVLink
@@ -518,7 +518,7 @@ export default function ExplainableAI() {
                         <TableRow>
                           <TableHead className="w-10">Rank</TableHead>
                           <TableHead>Gene</TableHead>
-                          <TableHead className="text-right">MDI Score</TableHead>
+                           <TableHead className="text-right">Permutation Score</TableHead>
                           {Object.keys(genes[0]?.perClassMean ?? {}).map(sub => (
                             <TableHead key={sub} className="text-right text-xs">
                               <span style={{ color: SUBTYPE_COLORS[sub] }}>

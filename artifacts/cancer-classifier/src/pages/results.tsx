@@ -47,7 +47,7 @@ function getGeneExpressionValues(sampleId: string) {
 const SUBTYPE_COLORS: Record<string, string> = {
   "BRCA (Breast)":      "#ec4899",
   "LUAD (Lung Adeno)":  "#0079F2",
-  "COAD (Colon)":       "#009118",
+  "COAD (Colorectal)":  "#009118",
   "GBM (Glioblastoma)": "#795EFF",
   "PRAD (Prostate)":    "#f59e0b",
 };
@@ -178,7 +178,7 @@ export default function Results() {
         <div className="flex items-start justify-between gap-3">
           <HeaderControls
             title={`Analysis Report: ${analysis?.sampleId || "Loading…"}`}
-            subtitle="Full classification output from the Random Forest model — probabilities, biomarkers, and treatment guidance."
+            subtitle="Full classification output from HistGradientBoosting v2 — probabilities, biomarkers, and research context."
             loading={loading}
             onRefresh={handleRefresh}
           />
@@ -321,7 +321,7 @@ export default function Results() {
             <CardHeader className="px-4 pt-4 pb-2 flex flex-row items-center justify-between space-y-0">
               <div>
                 <CardTitle className="text-base">Subtype Probabilities</CardTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Posterior probability from Random Forest (200 trees)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Model probability for each supported subtype</p>
               </div>
               {!loading && results?.subtypeProbabilities && (
                 <CSVLink
@@ -513,10 +513,10 @@ export default function Results() {
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Dna className="h-4 w-4 text-primary" />
-                  Gene Expression Input (top 15 by magnitude)
+                  Illustrative Expression Values (top 15 by magnitude)
                 </CardTitle>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  50-gene vector fed to the Random Forest — sorted by absolute expression level
+                  Demo values generated from the sample ID; these are not the measured values submitted to the classifier.
                 </p>
               </div>
               <CSVLink

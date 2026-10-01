@@ -18,7 +18,7 @@ import { Download, CheckCircle, XCircle, FlaskConical, AlertTriangle } from "luc
 const SUBTYPES = [
   { label: "BRCA (Breast)",      id: "brca" },
   { label: "LUAD (Lung Adeno)",  id: "luad" },
-  { label: "COAD (Colon)",       id: "coad" },
+  { label: "COAD (Colorectal)",  id: "coad" },
   { label: "GBM (Glioblastoma)", id: "gbm"  },
   { label: "PRAD (Prostate)",    id: "prad" },
 ];

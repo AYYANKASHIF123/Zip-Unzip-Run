@@ -74,9 +74,9 @@ const LAYERS = [
     icon: Brain,
     color: "bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300",
     border: "border-pink-200 dark:border-pink-800",
-    tech: ["GNN-AE v2.4.1", "Neural Network", "Gradient Boosting", "Random Forest", "SVM", "Logistic Regression", "Autoencoder (AE)"],
-    desc: "Seven ML models with versioned weights, training metrics, and evaluation pipelines. GNN-AE is the primary model, achieving 92.4% accuracy. Each model exposes a unified predict/evaluate interface. In production, models run server-side; in the current prototype, scoring is simulation-based with realistic distributions.",
-    components: ["Model registry", "Version management", "Training/evaluation interface", "Prediction history", "Confidence calibration"],
+    tech: ["HistGradientBoosting v2.0", "scikit-learn", "5-fold stratified CV", "50-gene panel", "FastAPI microservice"],
+    desc: "The active Python ML service trains HistGradientBoosting v2 on 3,330 real TCGA PanCancer Atlas samples across five cohorts. Versioned metadata, prediction, retraining, and evaluation are exposed through the service API.",
+    components: ["Active model registry", "Real-data retraining", "Prediction endpoint", "Cross-validation metrics", "Gene coverage checks"],
   },
   {
     level: 6,
@@ -84,8 +84,8 @@ const LAYERS = [
     icon: Layers,
     color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
     border: "border-indigo-200 dark:border-indigo-800",
-    tech: ["SHAP-approximation", "Permutation importance", "Coefficient-based XAI", "Gradient attribution", "Feature importance"],
-    desc: "Model-agnostic explainability engine that computes per-sample and global feature importance. Uses SHAP-approximation (gradient weights + permutation + coefficient) rather than full SHAP to avoid heavy Python dependencies. Full SHAP integration is planned for Phase 3.",
+    tech: ["Permutation importance", "Class-mean delta", "Sample-level contributions", "Global feature ranking"],
+    desc: "The active explainability path uses permutation importance for global gene ranking and combines it with the sample's scaled value minus the predicted subtype's class mean. This is an approximate, model-agnostic explanation — not SHAP.",
     components: ["Global gene importance rankings", "Sample-level contribution charts", "Positive/negative gene identification", "Confidence explanation", "XAI export"],
   },
   {
@@ -135,8 +135,8 @@ export default function Architecture() {
           <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-0">Contract-First API</Badge>
           <Badge className="bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300 border-0">pnpm Workspaces</Badge>
           <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 border-0">TypeScript End-to-End</Badge>
-          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-0">7 ML Models</Badge>
-          <Badge className="bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 border-0">XAI Enabled</Badge>
+            <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-0">Active ML v2.0</Badge>
+            <Badge className="bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300 border-0">Permutation XAI</Badge>
         </div>
 
         <Separator />
@@ -181,8 +181,8 @@ export default function Architecture() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
-            { title: "Data Flow", items: ["User uploads CSV/TSV dataset", "Backend validates & stores metadata", "Preprocessing pipeline runs (6 stages)", "ML model scores samples", "XAI engine computes feature importance", "Results stored & available for reports"] },
-            { title: "Key Design Decisions", items: ["OpenAPI-first: spec drives all contracts", "Zod validation at every boundary", "Structured logging (Pino) — no console.log", "XAI via gradient/permutation (no SHAP dep)", "Role-based access enforced server-side", "Drizzle ORM for type-safe, migration-ready DB"] },
+            { title: "Data Flow", items: ["User uploads CSV/TSV dataset", "Backend validates & stores metadata", "Real ML service checks the 50-gene panel", "HistGradientBoosting v2 scores samples", "Permutation XAI computes contribution context", "Results stored & available for reports"] },
+            { title: "Key Design Decisions", items: ["OpenAPI-first: spec drives all contracts", "Zod validation at every boundary", "Structured logging (Pino) — no console.log", "Permutation importance + class-mean delta — not SHAP", "Role-based access enforced server-side", "Drizzle ORM for type-safe, migration-ready DB"] },
             { title: "Scalability Path", items: ["Stateless API → horizontal scaling", "PostgreSQL → cloud-managed (Neon/Supabase)", "Model inference → Python microservice", "Auth → Replit Auth or Clerk", "Storage → S3/GCS object store", "Real-time → WebSocket pipeline updates"] },
           ].map(col => (
             <Card key={col.title} className="border-border/60">

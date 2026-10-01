@@ -19,7 +19,7 @@ const TEAM_ACTIVITY = [
 ];
 
 const MODEL_USAGE = [
-  { model: "Random Forest v2.3", pct: 62 },
+  { model: "HistGradientBoosting v2.0", pct: 62 },
   { model: "Gradient Boosting v1.8", pct: 24 },
   { model: "SVM (RBF) v1.1", pct: 14 },
 ];

@@ -12,16 +12,16 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 const METRICS = [
-  { label: "Accuracy",  value: "92.4%" },
-  { label: "Precision (macro)", value: "91.8%" },
-  { label: "Recall (macro)",    value: "90.6%" },
-  { label: "F1 Score (macro)",  value: "91.2%" },
+  { label: "5-fold CV accuracy", value: "86.52%" },
+  { label: "5-fold CV F1 (weighted)", value: "86.29%" },
+  { label: "Training samples", value: "3,330" },
+  { label: "Input genes", value: "50" },
 ];
 
 const SUBTYPES = [
   { code: "BRCA", name: "Breast Invasive Carcinoma" },
   { code: "LUAD", name: "Lung Adenocarcinoma" },
-  { code: "COAD", name: "Colon Adenocarcinoma" },
+  { code: "COAD", name: "Colorectal Adenocarcinoma" },
   { code: "GBM",  name: "Glioblastoma Multiforme" },
   { code: "PRAD", name: "Prostate Adenocarcinoma" },
 ];
@@ -34,7 +34,8 @@ export default function ModelCard() {
         {/* Hero */}
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-0 font-medium">Model Card v1.0</Badge>
+            <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border-0 font-medium">Model Card v2.0</Badge>
+            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 border-0 font-medium">Active ML Service</Badge>
             <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-0 font-medium">Research Prototype — Not Clinically Validated</Badge>
           </div>
           <div className="flex items-start gap-4">
@@ -42,7 +43,7 @@ export default function ModelCard() {
               <ClipboardList className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Model Card — Random Forest Cancer Subtype Classifier</h1>
+              <h1 className="text-2xl font-bold tracking-tight">Model Card — HistGradientBoosting Cancer Subtype Classifier</h1>
               <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
                 Following the Model Cards for Model Reporting framework (Mitchell et al., 2019), this document summarises
                 what the deployed model is, how it was trained, how it performs, and — critically — what it should
@@ -56,7 +57,7 @@ export default function ModelCard() {
           <ShieldAlert className="h-4 w-4 text-red-600" />
           <AlertDescription className="text-sm text-red-800 dark:text-red-300">
             <strong>Not a medical device.</strong> This model is an academic Final Year Project prototype trained on a
-            small, class-balanced demonstration dataset. It has not undergone clinical validation, regulatory review,
+             real TCGA PanCancer Atlas expression data from five cohorts. It has not undergone clinical validation, regulatory review,
             or external cohort testing, and must never be used to inform real patient care or treatment decisions.
           </AlertDescription>
         </Alert>
@@ -71,8 +72,8 @@ export default function ModelCard() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               {[
-                ["Architecture", "Random Forest (scikit-learn), 200 trees"],
-                ["Version", "RandomForest v1.0"],
+                ["Architecture", "HistGradientBoostingClassifier (scikit-learn)"],
+                ["Version", "HistGradientBoosting v2.0"],
                 ["Input", "50-gene expression vector (z-score normalised)"],
                 ["Output", "5-class subtype probability distribution"],
                 ["Training framework", "Python 3.11, scikit-learn, FastAPI"],
@@ -92,17 +93,20 @@ export default function ModelCard() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground leading-relaxed">
               <p>
-                Trained on a synthetic, class-balanced 50-gene expression panel derived from TCGA Pan-Cancer Atlas gene
-                signatures, generated to approximate real subtype-specific expression patterns for demonstration purposes.
+                Trained on real TCGA PanCancer Atlas mRNA expression data from cBioPortal. The source cohorts are
+                BRCA, LUAD, COADREAD, GBM, and PRAD, represented here as five research cancer subtypes.
               </p>
               <div className="flex justify-between border-t border-border/50 pt-2 mt-2">
-                <span>Samples per class</span><span className="font-medium text-foreground">~200 (balanced)</span>
+                <span>Total samples</span><span className="font-medium text-foreground">3,330 real samples</span>
               </div>
               <div className="flex justify-between">
-                <span>Train / test split</span><span className="font-medium text-foreground">80 / 20, stratified</span>
+                <span>Validation</span><span className="font-medium text-foreground">5-fold stratified CV</span>
               </div>
               <div className="flex justify-between">
                 <span>Feature count</span><span className="font-medium text-foreground">50 curated cancer genes</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Preprocessing</span><span className="font-medium text-foreground">Median imputation + standard scaling</span>
               </div>
             </CardContent>
           </Card>
@@ -122,8 +126,8 @@ export default function ModelCard() {
             ))}
           </div>
           <p className="text-xs text-muted-foreground">
-            Metrics computed on the held-out 20% synthetic test split. See the Model Performance page for the full
-            confusion matrix and per-class breakdown.
+             Accuracy and weighted F1 are 5-fold cross-validation estimates on the real TCGA-derived training cohort. They are not
+             external clinical validation results. See the Model Performance page for the platform's evaluation view.
           </p>
         </div>
 
@@ -136,7 +140,7 @@ export default function ModelCard() {
             <ul className="space-y-1.5 text-sm text-muted-foreground">
               <li>• Educational demonstration of ML-driven genomics classification (FYP / coursework)</li>
               <li>• Prototyping and UX research for a future clinical decision-support tool</li>
-              <li>• Benchmarking explainability techniques against a known ground truth</li>
+               <li>• Benchmarking model-agnostic explainability on labelled research data</li>
             </ul>
           </div>
           <div className="space-y-2">
@@ -173,16 +177,16 @@ export default function ModelCard() {
           <div className="space-y-2">
             <SectionTitle><Scale className="w-4 h-4 text-amber-600" />Limitations</SectionTitle>
             <ul className="space-y-1.5 text-sm text-muted-foreground">
-              <li>• Trained on synthetic/simulated data, not a real multi-institution patient cohort</li>
+               <li>• Training data is real but limited to five TCGA-derived cohorts and a 50-gene panel</li>
               <li>• 50-gene panel is a small subset of the ~20,000 genes typically profiled clinically</li>
-              <li>• No external validation, no prospective clinical trial</li>
-              <li>• Explainability scores are MDI + class-mean deltas, an approximation — not exact Shapley values</li>
+               <li>• No independent external validation, prospective clinical trial, or calibration study</li>
+               <li>• Explainability uses permutation importance + class-mean delta, not SHAP or exact Shapley values</li>
             </ul>
           </div>
           <div className="space-y-2">
             <SectionTitle><ShieldAlert className="w-4 h-4 text-amber-600" />Ethical Considerations</SectionTitle>
             <ul className="space-y-1.5 text-sm text-muted-foreground">
-              <li>• Synthetic training data was not sourced from identifiable patients</li>
+               <li>• The dataset is used for research benchmarking; cohort and preprocessing shift may affect results</li>
               <li>• Demographic/subgroup fairness has not been formally audited</li>
               <li>• Any future clinical use requires IRB approval, real-world validation, and regulatory clearance</li>
             </ul>
@@ -191,7 +195,7 @@ export default function ModelCard() {
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
           <CalendarClock className="w-3.5 h-3.5" />
-          Last updated: model v1.0, Final Year Project submission cycle 2026.
+          Last updated: active model v2.0, Final Year Project submission cycle 2026.
         </div>
       </div>
     </div>

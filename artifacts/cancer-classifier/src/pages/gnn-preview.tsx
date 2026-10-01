@@ -5,15 +5,15 @@ import { PrototypeBanner } from "@/components/shared/PrototypeBanner";
 import { Network, GitCompareArrows, AlertTriangle } from "lucide-react";
 
 const COMPARISON = [
-  { metric: "Accuracy", rf: "91.4%", gnn: "~93% (projected)" },
-  { metric: "Interpretability", rf: "High (MDI + delta)", gnn: "Moderate (attention weights)" },
-  { metric: "Training data need", rf: "Moderate", gnn: "High (requires PPI graph + labels)" },
-  { metric: "Production status", rf: "Active model", gnn: "Not trained — research preview" },
+  { metric: "5-fold CV accuracy", active: "86.52% (TCGA cohort)", gnn: "Not measured" },
+  { metric: "5-fold weighted CV F1", active: "86.29% (TCGA cohort)", gnn: "Not measured" },
+  { metric: "Explainability", active: "Permutation importance + class-mean delta", gnn: "Not implemented" },
+  { metric: "Status", active: "Active research model", gnn: "Not trained — research preview" },
 ];
 
 const LIMITATIONS = [
   "No production GNN model has been trained on real PPI graph data.",
-  "Projected accuracy is an estimate based on published GNN genomics literature, not an internal experiment.",
+  "The active-model cross-validation results are not directly comparable to a GNN; no GNN evaluation has been run.",
   "Would require significant compute and a curated protein-interaction graph (e.g. STRING DB) to build.",
 ];
 
@@ -43,12 +43,12 @@ export default function GnnPreview() {
 
         <Card className="border-border/60">
           <CardContent className="pt-5 pb-5">
-            <SectionTitle><GitCompareArrows className="w-4 h-4" /> Comparison vs. Random Forest (Production Model)</SectionTitle>
+            <SectionTitle><GitCompareArrows className="w-4 h-4" /> Active Model Reference vs. GNN Research Preview</SectionTitle>
             <div className="space-y-1.5">
               {COMPARISON.map(c => (
                 <div key={c.metric} className="grid grid-cols-3 text-xs bg-secondary/30 rounded-md px-3 py-2">
                   <span className="font-medium">{c.metric}</span>
-                  <span>{c.rf}</span>
+                  <span>{c.active}</span>
                   <span className="text-indigo-600 dark:text-indigo-400">{c.gnn}</span>
                 </div>
               ))}
