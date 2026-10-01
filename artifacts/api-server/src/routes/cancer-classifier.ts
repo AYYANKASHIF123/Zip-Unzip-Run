@@ -334,26 +334,6 @@ router.get("/analyses/:id/results", async (req: Request, res: Response): Promise
   });
 });
 
-router.get("/metrics/model-performance", async (_req: Request, res: Response): Promise<void> => {
-  res.json({
-    overallAccuracy: 0.924, overallPrecision: 0.917, overallRecall: 0.911, overallF1Score: 0.914, aucRoc: 0.978,
-    perSubtypeMetrics: [
-      { subtype: "BRCA",  accuracy: 0.947, precision: 0.938, recall: 0.952, f1Score: 0.945, support: 87, aucRoc: 0.991 },
-      { subtype: "LUAD",  accuracy: 0.912, precision: 0.904, recall: 0.918, f1Score: 0.911, support: 73, aucRoc: 0.974 },
-      { subtype: "COAD",  accuracy: 0.931, precision: 0.925, recall: 0.928, f1Score: 0.926, support: 61, aucRoc: 0.983 },
-      { subtype: "GBM",   accuracy: 0.963, precision: 0.958, recall: 0.961, f1Score: 0.959, support: 54, aucRoc: 0.992 },
-      { subtype: "PRAD",  accuracy: 0.887, precision: 0.879, recall: 0.882, f1Score: 0.880, support: 48, aucRoc: 0.961 },
-    ],
-    trainingHistory: Array.from({ length: 100 }, (_, i) => ({
-      epoch: i + 1,
-      trainLoss:     +Math.max(0.06, 1.8  * Math.exp(-0.09  * (i + 1)) + (Math.sin(i * 0.3) * 0.02)).toFixed(4),
-      valLoss:       +Math.max(0.09, 1.95 * Math.exp(-0.085 * (i + 1)) + (Math.sin(i * 0.4) * 0.03)).toFixed(4),
-      trainAccuracy: +Math.min(0.985, 0.45 + 0.54 * (1 - Math.exp(-0.08  * (i + 1))) + Math.sin(i * 0.3) * 0.005).toFixed(4),
-      valAccuracy:   +Math.min(0.965, 0.43 + 0.52 * (1 - Math.exp(-0.075 * (i + 1))) + Math.sin(i * 0.4) * 0.006).toFixed(4),
-    })),
-  });
-});
-
 router.get("/metrics/confusion-matrix", async (_req: Request, res: Response): Promise<void> => {
   res.json({
     labels: ["BRCA", "LUAD", "COAD", "GBM", "PRAD"],

@@ -38,7 +38,6 @@ import type {
   GoTerm,
   HealthStatus,
   HeatmapData,
-  ModelPerformance,
   Notification,
   PathwayResult,
   PcaData,
@@ -510,83 +509,6 @@ export function useGetAnalysisResults<TData = Awaited<ReturnType<typeof getAnaly
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAnalysisResultsQueryOptions(id,options)
-
-  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
-
-  return { ...query, queryKey: queryOptions.queryKey };
-}
-
-
-
-
-
-
-
-export const getGetModelPerformanceUrl = () => {
-
-
-
-
-  return `/api/metrics/model-performance`
-}
-
-/**
- * @summary Model evaluation metrics
- */
-export const getModelPerformance = async ( options?: RequestInit): Promise<ModelPerformance> => {
-
-  return customFetch<ModelPerformance>(getGetModelPerformanceUrl(),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getGetModelPerformanceQueryKey = () => {
-    return [
-    `/api/metrics/model-performance`
-    ] as const;
-    }
-
-
-export const getGetModelPerformanceQueryOptions = <TData = Awaited<ReturnType<typeof getModelPerformance>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getModelPerformance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-) => {
-
-const {query: queryOptions, request: requestOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getGetModelPerformanceQueryKey();
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getModelPerformance>>> = ({ signal }) => getModelPerformance({ signal, ...requestOptions });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getModelPerformance>>, TError, TData> & { queryKey: QueryKey }
-}
-
-export type GetModelPerformanceQueryResult = NonNullable<Awaited<ReturnType<typeof getModelPerformance>>>
-export type GetModelPerformanceQueryError = ErrorType<unknown>
-
-
-/**
- * @summary Model evaluation metrics
- */
-
-export function useGetModelPerformance<TData = Awaited<ReturnType<typeof getModelPerformance>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getModelPerformance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
-
- ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-
-  const queryOptions = getGetModelPerformanceQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

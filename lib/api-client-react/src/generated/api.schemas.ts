@@ -165,36 +165,6 @@ export interface ClassificationResult {
   contribution?: ClassificationResultContribution;
 }
 
-export interface SubtypeMetric {
-  subtype: string;
-  accuracy: number;
-  precision: number;
-  recall: number;
-  f1Score: number;
-  support: number;
-  /** @nullable */
-  aucRoc?: number | null;
-}
-
-export interface TrainingEpoch {
-  epoch: number;
-  trainLoss: number;
-  valLoss: number;
-  trainAccuracy: number;
-  valAccuracy: number;
-}
-
-export interface ModelPerformance {
-  overallAccuracy: number;
-  overallPrecision: number;
-  overallRecall: number;
-  overallF1Score: number;
-  /** @nullable */
-  aucRoc?: number | null;
-  perSubtypeMetrics: SubtypeMetric[];
-  trainingHistory: TrainingEpoch[];
-}
-
 export interface ConfusionMatrix {
   labels: string[];
   matrix: number[][];

@@ -124,19 +124,6 @@ paths:
         "404":
           description: Not found
 
-  /metrics/model-performance:
-    get:
-      operationId: getModelPerformance
-      tags: [metrics]
-      summary: Model evaluation metrics
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ModelPerformance"
-
   /metrics/confusion-matrix:
     get:
       operationId: getConfusionMatrix
@@ -730,63 +717,6 @@ components:
           type: ["number", "null"]
         medianAge:
           type: ["integer", "null"]
-
-    ModelPerformance:
-      type: object
-      required: [overallAccuracy, overallPrecision, overallRecall, overallF1Score, perSubtypeMetrics, trainingHistory]
-      properties:
-        overallAccuracy:
-          type: number
-        overallPrecision:
-          type: number
-        overallRecall:
-          type: number
-        overallF1Score:
-          type: number
-        aucRoc:
-          type: ["number", "null"]
-        perSubtypeMetrics:
-          type: array
-          items:
-            $ref: "#/components/schemas/SubtypeMetric"
-        trainingHistory:
-          type: array
-          items:
-            $ref: "#/components/schemas/TrainingEpoch"
-
-    SubtypeMetric:
-      type: object
-      required: [subtype, accuracy, precision, recall, f1Score, support]
-      properties:
-        subtype:
-          type: string
-        accuracy:
-          type: number
-        precision:
-          type: number
-        recall:
-          type: number
-        f1Score:
-          type: number
-        support:
-          type: integer
-        aucRoc:
-          type: ["number", "null"]
-
-    TrainingEpoch:
-      type: object
-      required: [epoch, trainLoss, valLoss, trainAccuracy, valAccuracy]
-      properties:
-        epoch:
-          type: integer
-        trainLoss:
-          type: number
-        valLoss:
-          type: number
-        trainAccuracy:
-          type: number
-        valAccuracy:
-          type: number
 
     ConfusionMatrix:
       type: object

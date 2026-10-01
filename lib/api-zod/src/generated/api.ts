@@ -177,34 +177,6 @@ export const GetAnalysisResultsResponse = zod.object({
 
 
 /**
- * @summary Model evaluation metrics
- */
-export const GetModelPerformanceResponse = zod.object({
-  "overallAccuracy": zod.number(),
-  "overallPrecision": zod.number(),
-  "overallRecall": zod.number(),
-  "overallF1Score": zod.number(),
-  "aucRoc": zod.number().nullish(),
-  "perSubtypeMetrics": zod.array(zod.object({
-  "subtype": zod.string(),
-  "accuracy": zod.number(),
-  "precision": zod.number(),
-  "recall": zod.number(),
-  "f1Score": zod.number(),
-  "support": zod.number(),
-  "aucRoc": zod.number().nullish()
-})),
-  "trainingHistory": zod.array(zod.object({
-  "epoch": zod.number(),
-  "trainLoss": zod.number(),
-  "valLoss": zod.number(),
-  "trainAccuracy": zod.number(),
-  "valAccuracy": zod.number()
-}))
-})
-
-
-/**
  * @summary Confusion matrix data
  */
 export const GetConfusionMatrixResponse = zod.object({
