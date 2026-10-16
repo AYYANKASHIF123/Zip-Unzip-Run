@@ -701,6 +701,94 @@ router.get("/models/versions", async (req: Request, res: Response): Promise<void
   }
 });
 
+router.get("/models/evaluation", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const r = await fetch("http://localhost:8000/ml/models");
+    if (!r.ok) throw new Error(`ML service ${r.status}`);
+    const registry = await r.json() as {
+      activeVersionId?: string | null;
+      versions?: Array<{ id: string; evaluation?: unknown }>;
+    };
+    const active = registry.versions?.find(version =>
+      version.id === registry.activeVersionId,
+    );
+    const stored = active?.evaluation;
+    if (!stored || typeof stored !== "object") {
+      res.json({
+        activeVersionId: registry.activeVersionId ?? null,
+        evaluation: null,
+      });
+      return;
+    }
+
+    const asRecord = (value: unknown): Record<string, unknown> =>
+      value !== null && typeof value === "object" && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : {};
+    const numberOrNull = (value: unknown): number | null =>
+      typeof value === "number" && Number.isFinite(value) ? value : null;
+    const integerOrNull = (value: unknown): number | null => {
+      const number = numberOrNull(value);
+      return number !== null && Number.isInteger(number) ? number : null;
+    };
+    const meanStdOrNull = (value: unknown): { mean: number | null; std: number | null } | null => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+      const metric = asRecord(value);
+      return {
+        mean: numberOrNull(metric.mean),
+        std: numberOrNull(metric.std),
+      };
+    };
+
+    const evaluation = asRecord(stored);
+    const crossValidation = asRecord(evaluation.crossValidation);
+    const cvMetrics = asRecord(crossValidation.metrics);
+    const heldOutTest = asRecord(evaluation.heldOutTest);
+    const perClass = Array.isArray(heldOutTest.perClass)
+      ? heldOutTest.perClass.map((item) => {
+          const row = asRecord(item);
+          return {
+            subtype: typeof row.subtype === "string" ? row.subtype : null,
+            precision: numberOrNull(row.precision),
+            recall: numberOrNull(row.recall),
+            f1: numberOrNull(row.f1),
+            support: integerOrNull(row.support),
+          };
+        })
+      : null;
+    const confusionMatrix = asRecord(heldOutTest.confusionMatrix);
+    const hasConfusionMatrix =
+      Array.isArray(confusionMatrix.labels) && Array.isArray(confusionMatrix.values);
+
+    res.json({
+      activeVersionId: registry.activeVersionId ?? null,
+      evaluation: {
+        modelVersionId: typeof evaluation.modelVersionId === "string" ? evaluation.modelVersionId : null,
+        evaluatedAt: typeof evaluation.evaluatedAt === "string" ? evaluation.evaluatedAt : null,
+        split: evaluation.split ?? null,
+        crossValidation: {
+          nSplits: integerOrNull(crossValidation.nSplits),
+          metrics: {
+            accuracy: meanStdOrNull(cvMetrics.accuracy),
+            weightedF1: meanStdOrNull(cvMetrics.weightedF1),
+            macroF1: meanStdOrNull(cvMetrics.macroF1),
+          },
+        },
+        heldOutTest: {
+          accuracy: numberOrNull(heldOutTest.accuracy),
+          weightedF1: numberOrNull(heldOutTest.weightedF1),
+          macroF1: numberOrNull(heldOutTest.macroF1),
+          perClass,
+          confusionMatrix: hasConfusionMatrix ? confusionMatrix : null,
+        },
+      },
+    });
+  } catch (err) {
+    req.log.error({ err }, "Failed to fetch model evaluation");
+    res.status(503).json({ error: "ML service unavailable" });
+  }
+});
+
 router.post("/models/train", async (req: Request, res: Response): Promise<void> => {
   try {
     const r = await fetch("http://localhost:8000/ml/models/train", {

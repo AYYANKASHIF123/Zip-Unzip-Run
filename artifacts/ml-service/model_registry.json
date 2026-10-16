@@ -16,7 +16,130 @@
       "nSubtypes": 5,
       "dataSource": "real_tcga_pancan_atlas",
       "isActive": true,
-      "filePath": "model_v2.pkl"
+      "filePath": "model_v2.pkl",
+      "evaluation": {
+        "modelVersionId": "v2",
+        "evaluatedAt": "2026-10-16T04:08:38.522633+00:00",
+        "split": {
+          "totalSamples": 3330,
+          "developmentSamples": 2664,
+          "testSamples": 666,
+          "testFraction": 0.2,
+          "randomState": 42,
+          "subtypeOrder": [
+            "BRCA",
+            "LUAD",
+            "COAD",
+            "GBM",
+            "PRAD"
+          ]
+        },
+        "crossValidation": {
+          "nSplits": 5,
+          "metrics": {
+            "accuracy": {
+              "mean": 0.841964,
+              "std": 0.008138
+            },
+            "weightedF1": {
+              "mean": 0.838656,
+              "std": 0.008507
+            },
+            "macroF1": {
+              "mean": 0.82758,
+              "std": 0.010114
+            }
+          }
+        },
+        "heldOutTest": {
+          "accuracy": 0.861862,
+          "weightedF1": 0.859996,
+          "macroF1": 0.851425,
+          "perClass": [
+            {
+              "subtype": "BRCA",
+              "precision": 0.857143,
+              "recall": 0.967742,
+              "f1": 0.909091,
+              "support": 217
+            },
+            {
+              "subtype": "LUAD",
+              "precision": 0.778846,
+              "recall": 0.716814,
+              "f1": 0.746544,
+              "support": 113
+            },
+            {
+              "subtype": "COAD",
+              "precision": 0.896552,
+              "recall": 0.87395,
+              "f1": 0.885106,
+              "support": 119
+            },
+            {
+              "subtype": "GBM",
+              "precision": 0.878505,
+              "recall": 0.79661,
+              "f1": 0.835556,
+              "support": 118
+            },
+            {
+              "subtype": "PRAD",
+              "precision": 0.904255,
+              "recall": 0.858586,
+              "f1": 0.880829,
+              "support": 99
+            }
+          ],
+          "confusionMatrix": {
+            "labels": [
+              "BRCA",
+              "LUAD",
+              "COAD",
+              "GBM",
+              "PRAD"
+            ],
+            "values": [
+              [
+                210,
+                3,
+                1,
+                1,
+                2
+              ],
+              [
+                14,
+                81,
+                4,
+                9,
+                5
+              ],
+              [
+                7,
+                5,
+                104,
+                1,
+                2
+              ],
+              [
+                10,
+                11,
+                3,
+                94,
+                0
+              ],
+              [
+                4,
+                4,
+                4,
+                2,
+                85
+              ]
+            ]
+          }
+        }
+      }
     },
     {
       "id": "v1",

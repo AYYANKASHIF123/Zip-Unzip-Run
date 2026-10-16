@@ -1,2 +1,3 @@
 - [GeneClassifier XAI honesty](geneclassifier-xai-honesty.md) — describe v2 as permutation importance + class-mean delta; never label contribution scores as SHAP.
 - [GeneClassifier prototype labeling pattern](geneclassifier-prototype-labeling.md) — shared PageHeader/PrototypeBanner/ScoreCard components + readiness-scoring convention for startup/research-preview pages.
+- [OpenAPI codegen safety](openapi-codegen-safety.md) — duplicate component keys can make Orval fail after it has cleaned generated client files.

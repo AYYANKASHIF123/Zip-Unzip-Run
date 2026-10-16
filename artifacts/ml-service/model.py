@@ -9,8 +9,9 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.model_selection import StratifiedKFold, cross_val_score, cross_validate, train_test_split
 from sklearn.inspection import permutation_importance
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, precision_recall_fscore_support
 
 CANCER_SUBTYPES = ["BRCA", "LUAD", "COAD", "GBM", "PRAD"]
 
@@ -148,6 +149,126 @@ def _compute_importances(pipeline, X, y) -> np.ndarray:
 # ── Core train / load ──────────────────────────────────────────────────────────
 
 DEFAULT_PARAMS = {"max_iter": 300, "learning_rate": 0.05, "max_depth": None, "l2_regularization": 0.0}
+
+
+def evaluate_and_store_active_model() -> dict:
+    """
+    Evaluate the active model configuration on a stratified, untouched test split.
+    The evaluation-only pipeline is never written to MODEL_PATH, so serving predictions
+    continue to use the existing active model bundle.
+    """
+    if not _train_lock.acquire(blocking=False):
+        raise RuntimeError("Model training is in progress; retry evaluation later")
+
+    try:
+        X, y = _load_training_data()
+        registry = load_registry()
+        active = next((v for v in registry.get("versions", []) if v.get("isActive")), None)
+        if active is None or active.get("dataSource") != "real_tcga_pancan_atlas":
+            raise RuntimeError("No active real TCGA model is available for evaluation")
+
+        model_version_id = active["id"]
+        params = active.get("params") or DEFAULT_PARAMS
+
+        # Split before any fitting or cross-validation so the test rows stay untouched.
+        X_development, X_test, y_development, y_test = train_test_split(
+            X,
+            y,
+            test_size=0.2,
+            random_state=42,
+            stratify=y,
+        )
+
+        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        cv_scores = cross_validate(
+            _make_pipeline(params),
+            X_development,
+            y_development,
+            cv=cv,
+            scoring={
+                "accuracy": "accuracy",
+                "weightedF1": "f1_weighted",
+                "macroF1": "f1_macro",
+            },
+            n_jobs=-1,
+            return_train_score=False,
+        )
+
+        evaluation_pipeline = _make_pipeline(params)
+        evaluation_pipeline.fit(X_development, y_development)
+        y_predicted = evaluation_pipeline.predict(X_test)
+
+        def mean_std(values: np.ndarray) -> dict:
+            return {
+                "mean": round(float(np.mean(values)), 6),
+                "std": round(float(np.std(values)), 6),
+            }
+
+        precision, recall, f1, support = precision_recall_fscore_support(
+            y_test,
+            y_predicted,
+            labels=np.arange(len(CANCER_SUBTYPES)),
+            zero_division=0,
+        )
+        matrix = confusion_matrix(
+            y_test,
+            y_predicted,
+            labels=np.arange(len(CANCER_SUBTYPES)),
+        )
+
+        evaluation = {
+            "modelVersionId": model_version_id,
+            "evaluatedAt": datetime.now(timezone.utc).isoformat(),
+            "split": {
+                "totalSamples": int(len(y)),
+                "developmentSamples": int(len(y_development)),
+                "testSamples": int(len(y_test)),
+                "testFraction": 0.2,
+                "randomState": 42,
+                "subtypeOrder": CANCER_SUBTYPES,
+            },
+            "crossValidation": {
+                "nSplits": 5,
+                "metrics": {
+                    "accuracy": mean_std(cv_scores["test_accuracy"]),
+                    "weightedF1": mean_std(cv_scores["test_weightedF1"]),
+                    "macroF1": mean_std(cv_scores["test_macroF1"]),
+                },
+            },
+            "heldOutTest": {
+                "accuracy": round(float(accuracy_score(y_test, y_predicted)), 6),
+                "weightedF1": round(float(f1_score(y_test, y_predicted, average="weighted", zero_division=0)), 6),
+                "macroF1": round(float(f1_score(y_test, y_predicted, average="macro", zero_division=0)), 6),
+                "perClass": [
+                    {
+                        "subtype": subtype,
+                        "precision": round(float(precision[i]), 6),
+                        "recall": round(float(recall[i]), 6),
+                        "f1": round(float(f1[i]), 6),
+                        "support": int(support[i]),
+                    }
+                    for i, subtype in enumerate(CANCER_SUBTYPES)
+                ],
+                "confusionMatrix": {
+                    "labels": CANCER_SUBTYPES,
+                    "values": matrix.astype(int).tolist(),
+                },
+            },
+        }
+
+        # Refuse to attach results to a different model if registry state changed mid-run.
+        current_registry = load_registry()
+        current_active = next(
+            (v for v in current_registry.get("versions", []) if v.get("isActive")),
+            None,
+        )
+        if current_active is None or current_active.get("id") != model_version_id:
+            raise RuntimeError("Active model changed during evaluation; results were not saved")
+        current_active["evaluation"] = evaluation
+        _save_registry(current_registry)
+        return evaluation
+    finally:
+        _train_lock.release()
 
 
 def _train_and_save() -> dict:

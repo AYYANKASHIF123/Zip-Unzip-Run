@@ -5,6 +5,93 @@
  * Gene Expression Cancer Classifier API
  * OpenAPI spec version: 0.1.0
  */
+/**
+ * @nullable
+ */
+export type EvaluationSplit = {
+  totalSamples: number;
+  developmentSamples: number;
+  testSamples: number;
+  testFraction: number;
+  randomState: number;
+  subtypeOrder: string[];
+} | null;
+
+/**
+ * @nullable
+ */
+export type MeanStdMetric = {
+  /** @nullable */
+  mean: number | null;
+  /** @nullable */
+  std: number | null;
+} | null;
+
+export type DevelopmentCrossValidationMetrics = {
+  accuracy: MeanStdMetric | null;
+  weightedF1: MeanStdMetric | null;
+  macroF1: MeanStdMetric | null;
+};
+
+export interface DevelopmentCrossValidation {
+  /** @nullable */
+  nSplits: number | null;
+  metrics: DevelopmentCrossValidationMetrics;
+}
+
+export interface PerClassMetric {
+  /** @nullable */
+  subtype: string | null;
+  /** @nullable */
+  precision: number | null;
+  /** @nullable */
+  recall: number | null;
+  /** @nullable */
+  f1: number | null;
+  /** @nullable */
+  support: number | null;
+}
+
+/**
+ * @nullable
+ */
+export type HeldOutConfusionMatrix = {
+  labels: string[];
+  values: number[][];
+} | null;
+
+export interface HeldOutTestMetrics {
+  /** @nullable */
+  accuracy: number | null;
+  /** @nullable */
+  weightedF1: number | null;
+  /** @nullable */
+  macroF1: number | null;
+  /** @nullable */
+  perClass: PerClassMetric[] | null;
+  confusionMatrix: HeldOutConfusionMatrix | null;
+}
+
+/**
+ * @nullable
+ */
+export type ModelEvaluationResponseEvaluation = {
+  /** @nullable */
+  modelVersionId: string | null;
+  /** @nullable */
+  evaluatedAt: string | null;
+  split: EvaluationSplit | null;
+  crossValidation: DevelopmentCrossValidation;
+  heldOutTest: HeldOutTestMetrics;
+} | null;
+
+export interface ModelEvaluationResponse {
+  /** @nullable */
+  activeVersionId: string | null;
+  /** @nullable */
+  evaluation: ModelEvaluationResponseEvaluation;
+}
+
 export interface HealthStatus {
   status: string;
 }

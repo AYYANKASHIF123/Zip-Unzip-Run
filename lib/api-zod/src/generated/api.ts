@@ -576,3 +576,56 @@ export const GetPpiNetworkResponse = zod.object({
 })
 
 
+/**
+ * @summary Get stored held-out evaluation for the active model
+ */
+export const GetModelEvaluationResponse = zod.object({
+  "activeVersionId": zod.string().nullable(),
+  "evaluation": zod.object({
+  "modelVersionId": zod.string().nullable(),
+  "evaluatedAt": zod.coerce.date().nullable(),
+  "split": zod.object({
+  "totalSamples": zod.number(),
+  "developmentSamples": zod.number(),
+  "testSamples": zod.number(),
+  "testFraction": zod.number(),
+  "randomState": zod.number(),
+  "subtypeOrder": zod.array(zod.string())
+}).nullable(),
+  "crossValidation": zod.object({
+  "nSplits": zod.number().nullable(),
+  "metrics": zod.object({
+  "accuracy": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "weightedF1": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "macroF1": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable()
+})
+}),
+  "heldOutTest": zod.object({
+  "accuracy": zod.number().nullable(),
+  "weightedF1": zod.number().nullable(),
+  "macroF1": zod.number().nullable(),
+  "perClass": zod.array(zod.object({
+  "subtype": zod.string().nullable(),
+  "precision": zod.number().nullable(),
+  "recall": zod.number().nullable(),
+  "f1": zod.number().nullable(),
+  "support": zod.number().nullable()
+})).nullable(),
+  "confusionMatrix": zod.object({
+  "labels": zod.array(zod.string()),
+  "values": zod.array(zod.array(zod.number()))
+}).nullable()
+})
+}).nullable()
+})
+
+

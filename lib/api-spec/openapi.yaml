@@ -479,8 +479,135 @@ paths:
               schema:
                 $ref: "#/components/schemas/PpiNetwork"
 
+  /models/evaluation:
+    get:
+      operationId: getModelEvaluation
+      tags: [metrics]
+      summary: Get stored held-out evaluation for the active model
+      responses:
+        "200":
+          description: Stored evaluation or null when one has not been run
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelEvaluationResponse"
+
 components:
   schemas:
+    ModelEvaluationResponse:
+      type: object
+      required: [activeVersionId, evaluation]
+      properties:
+        activeVersionId:
+          type: ["string", "null"]
+        evaluation:
+          type: ["object", "null"]
+          required: [modelVersionId, evaluatedAt, split, crossValidation, heldOutTest]
+          properties:
+            modelVersionId:
+              type: ["string", "null"]
+            evaluatedAt:
+              type: ["string", "null"]
+              format: date-time
+            split:
+              $ref: "#/components/schemas/EvaluationSplit"
+            crossValidation:
+              $ref: "#/components/schemas/DevelopmentCrossValidation"
+            heldOutTest:
+              $ref: "#/components/schemas/HeldOutTestMetrics"
+
+    EvaluationSplit:
+      type: ["object", "null"]
+      required: [totalSamples, developmentSamples, testSamples, testFraction, randomState, subtypeOrder]
+      properties:
+        totalSamples:
+          type: integer
+        developmentSamples:
+          type: integer
+        testSamples:
+          type: integer
+        testFraction:
+          type: number
+        randomState:
+          type: integer
+        subtypeOrder:
+          type: array
+          items:
+            type: string
+
+    DevelopmentCrossValidation:
+      type: object
+      required: [nSplits, metrics]
+      properties:
+        nSplits:
+          type: ["integer", "null"]
+        metrics:
+          type: object
+          required: [accuracy, weightedF1, macroF1]
+          properties:
+            accuracy:
+              $ref: "#/components/schemas/MeanStdMetric"
+            weightedF1:
+              $ref: "#/components/schemas/MeanStdMetric"
+            macroF1:
+              $ref: "#/components/schemas/MeanStdMetric"
+
+    MeanStdMetric:
+      type: ["object", "null"]
+      required: [mean, std]
+      properties:
+        mean:
+          type: ["number", "null"]
+        std:
+          type: ["number", "null"]
+
+    HeldOutTestMetrics:
+      type: object
+      required: [accuracy, weightedF1, macroF1, perClass, confusionMatrix]
+      properties:
+        accuracy:
+          type: ["number", "null"]
+        weightedF1:
+          type: ["number", "null"]
+        macroF1:
+          type: ["number", "null"]
+        perClass:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/PerClassMetric"
+        confusionMatrix:
+          $ref: "#/components/schemas/HeldOutConfusionMatrix"
+
+    PerClassMetric:
+      type: object
+      required: [subtype, precision, recall, f1, support]
+      properties:
+        subtype:
+          type: ["string", "null"]
+        precision:
+          type: ["number", "null"]
+        recall:
+          type: ["number", "null"]
+        f1:
+          type: ["number", "null"]
+        support:
+          type: ["integer", "null"]
+
+    HeldOutConfusionMatrix:
+      type: ["object", "null"]
+      required: [labels, values]
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        values:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+
     HealthStatus:
       type: object
       required: [status]

@@ -1,0 +1,23 @@
+In the GeneClassifier project, add a proper held-out evaluation to the ML service and show it in the app. Do not change the existing prediction behavior, the 50 gene features, or the current v2 model unless I explicitly retrain.
+
+1. ML service (Python/scikit-learn)
+- Use the same TCGA-derived training data and the same pipeline as the active model: median imputation, standard scaling, HistGradientBoostingClassifier.
+- Split the data once into 80% development and 20% held-out test, stratified by subtype, with a fixed random_state=42. Never use the test set for training or tuning.
+- Run stratified 5-fold cross-validation on the development set only. Record accuracy, weighted F1 and macro F1 (mean and std).
+- Fit on the full development set, then score once on the held-out test set. Compute accuracy, weighted F1, macro F1, per-class precision, recall, F1 and support, and the confusion matrix (rows = true, columns = predicted, in the order BRCA, LUAD, COAD, GBM, PRAD).
+- Save all of these in the model registry entry for the active model, together with the split sizes and random seed.
+
+2. API server
+- Add one endpoint that returns the stored evaluation results from the registry. Do not return any placeholder or invented numbers. If a metric is not stored, return null.
+
+3. Web app
+- On the Model Performance page, add: a held-out test accuracy / weighted F1 / macro F1 card next to the existing CV cards, a per-class precision/recall/F1 table, and a confusion matrix heatmap with counts.
+- Label everything clearly: "Internal cross-validation" versus "Held-out test set (20% of TCGA cohort)". State that this is not external validation.
+- Add the split sizes and random seed to the page.
+
+4. Rules
+- Show only metrics that are actually computed. No demo or illustrative values.
+- Keep the research-use disclaimer.
+- Keep the code simple and add a short comment where the split is made, explaining why the test set stays untouched.
+
+When done, summarize which files you changed and run the evaluation once so the page shows real numbers.

@@ -38,6 +38,7 @@ import type {
   GoTerm,
   HealthStatus,
   HeatmapData,
+  ModelEvaluationResponse,
   Notification,
   PathwayResult,
   PcaData,
@@ -2288,6 +2289,83 @@ export function useGetPpiNetwork<TData = Awaited<ReturnType<typeof getPpiNetwork
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetPpiNetworkQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetModelEvaluationUrl = () => {
+
+
+
+
+  return `/api/models/evaluation`
+}
+
+/**
+ * @summary Get stored held-out evaluation for the active model
+ */
+export const getModelEvaluation = async ( options?: RequestInit): Promise<ModelEvaluationResponse> => {
+
+  return customFetch<ModelEvaluationResponse>(getGetModelEvaluationUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetModelEvaluationQueryKey = () => {
+    return [
+    `/api/models/evaluation`
+    ] as const;
+    }
+
+
+export const getGetModelEvaluationQueryOptions = <TData = Awaited<ReturnType<typeof getModelEvaluation>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getModelEvaluation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetModelEvaluationQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getModelEvaluation>>> = ({ signal }) => getModelEvaluation({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getModelEvaluation>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetModelEvaluationQueryResult = NonNullable<Awaited<ReturnType<typeof getModelEvaluation>>>
+export type GetModelEvaluationQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get stored held-out evaluation for the active model
+ */
+
+export function useGetModelEvaluation<TData = Awaited<ReturnType<typeof getModelEvaluation>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getModelEvaluation>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetModelEvaluationQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
