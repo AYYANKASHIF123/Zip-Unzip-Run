@@ -72,6 +72,182 @@ export interface HeldOutTestMetrics {
   confusionMatrix: HeldOutConfusionMatrix | null;
 }
 
+export interface BaselineCrossValidation {
+  accuracy: MeanStdMetric | null;
+  weightedF1: MeanStdMetric | null;
+}
+
+export interface BaselineHeldOutMetrics {
+  /** @nullable */
+  accuracy: number | null;
+  /** @nullable */
+  weightedF1: number | null;
+  /** @nullable */
+  macroF1: number | null;
+}
+
+export interface BaselineModelMetrics {
+  /** @nullable */
+  model: string | null;
+  developmentCV: BaselineCrossValidation;
+  heldOutTest: BaselineHeldOutMetrics;
+}
+
+/**
+ * @nullable
+ */
+export type ShuffledLabelTestStatus = typeof ShuffledLabelTestStatus[keyof typeof ShuffledLabelTestStatus] | null;
+
+
+export const ShuffledLabelTestStatus = {
+  pass: 'pass',
+  warning: 'warning',
+} as const;
+
+export interface ShuffledLabelTest {
+  /** @nullable */
+  seed: number | null;
+  /** @nullable */
+  meanAccuracy: number | null;
+  /** @nullable */
+  chanceAccuracy: number | null;
+  /** @nullable */
+  prevalenceChanceAccuracy?: number | null;
+  /** @nullable */
+  warningThreshold: number | null;
+  /** @nullable */
+  status: ShuffledLabelTestStatus;
+}
+
+export interface SeedFoldScore {
+  /** @nullable */
+  fold: number | null;
+  /** @nullable */
+  accuracy: number | null;
+  /** @nullable */
+  weightedF1: number | null;
+}
+
+export interface SeedStabilityRun {
+  /** @nullable */
+  seed: number | null;
+  /** @nullable */
+  accuracyMean: number | null;
+  /** @nullable */
+  weightedF1Mean: number | null;
+  /** @nullable */
+  foldScores: SeedFoldScore[] | null;
+}
+
+export interface SeedStability {
+  /** @nullable */
+  seeds: number[] | null;
+  accuracy: MeanStdMetric | null;
+  weightedF1: MeanStdMetric | null;
+  /** @nullable */
+  runs: SeedStabilityRun[] | null;
+}
+
+/**
+ * @nullable
+ */
+export type SubtypeCounts = {
+  /** @nullable */
+  BRCA: number | null;
+  /** @nullable */
+  LUAD: number | null;
+  /** @nullable */
+  COAD: number | null;
+  /** @nullable */
+  GBM: number | null;
+  /** @nullable */
+  PRAD: number | null;
+} | null;
+
+export interface ModelClassCounts {
+  fullCohort: SubtypeCounts | null;
+  development: SubtypeCounts | null;
+  heldOut: SubtypeCounts | null;
+}
+
+export interface GeneMissingRate {
+  /** @nullable */
+  gene: string | null;
+  /** @nullable */
+  missingRate: number | null;
+}
+
+export interface MissingValueChecks {
+  /** @nullable */
+  overallRate: number | null;
+  /** @nullable */
+  topGenes: GeneMissingRate[] | null;
+}
+
+/**
+ * @nullable
+ */
+export type TrustCheckItemStatus = typeof TrustCheckItemStatus[keyof typeof TrustCheckItemStatus] | null;
+
+
+export const TrustCheckItemStatus = {
+  pass: 'pass',
+  fail: 'fail',
+  warning: 'warning',
+  not_applicable: 'not_applicable',
+} as const;
+
+export interface TrustCheckItem {
+  /** @nullable */
+  key: string | null;
+  /** @nullable */
+  status: TrustCheckItemStatus;
+  /** @nullable */
+  details: string | null;
+}
+
+export interface ModelDataChecks {
+  /** @nullable */
+  exactDuplicateSamples: number | null;
+  /** @nullable */
+  exactDuplicateVectorsAcrossPartitions: number | null;
+  /** @nullable */
+  allFeaturesMissingSamples: number | null;
+  /** @nullable */
+  sampleIdColumn: string | null;
+  /** @nullable */
+  sampleIdOverlapCount: number | null;
+  /** @nullable */
+  metadataColumnsFound: string[] | null;
+  /** @nullable */
+  forbiddenFeatureColumns: string[] | null;
+  /** @nullable */
+  featuresExcludeMetadata: boolean | null;
+  classCounts: ModelClassCounts;
+  missingValues: MissingValueChecks;
+  /** @nullable */
+  checklist: TrustCheckItem[] | null;
+}
+
+/**
+ * @nullable
+ */
+export type ModelTrustChecks = {
+  /** @nullable */
+  computedAt: string | null;
+  /** @nullable */
+  modelVersionId: string | null;
+  /** @nullable */
+  shuffleSeed: number | null;
+  /** @nullable */
+  stabilitySeeds: number[] | null;
+  /** @nullable */
+  baselineModels: BaselineModelMetrics[] | null;
+  shuffledLabelTest: ShuffledLabelTest;
+  seedStability: SeedStability;
+  dataChecks: ModelDataChecks;
+} | null;
+
 /**
  * @nullable
  */
@@ -83,6 +259,7 @@ export type ModelEvaluationResponseEvaluation = {
   split: EvaluationSplit | null;
   crossValidation: DevelopmentCrossValidation;
   heldOutTest: HeldOutTestMetrics;
+  trustChecks: ModelTrustChecks | null;
 } | null;
 
 export interface ModelEvaluationResponse {

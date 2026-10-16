@@ -1,6 +1,7 @@
 import { HeaderControls } from "@/components/layout/HeaderControls";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -15,10 +16,11 @@ import { formatPercent } from "@/lib/constants";
 import {
   getGetModelEvaluationQueryKey,
   useGetModelEvaluation,
+  useRunModelEvaluationChecks,
   type ModelEvaluationResponse,
 } from "@workspace/api-client-react";
-import { useQuery } from "@tanstack/react-query";
-import { Info, ShieldAlert } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Info, Loader2, Play, ShieldAlert } from "lucide-react";
 
 type ModelVersion = {
   id: string;
@@ -44,7 +46,20 @@ function percent(value: number | null | undefined): string {
   return value === null || value === undefined ? "Not recorded" : formatPercent(value * 100);
 }
 
+function meanStdPercent(value: { mean: number | null; std: number | null } | null | undefined): string {
+  if (value?.mean == null || value.std == null) return "Not recorded";
+  return `${percent(value.mean)} ± ${percent(value.std)}`;
+}
+
+function statusBadge(status: string | null | undefined) {
+  if (status === "pass") return <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">Pass</Badge>;
+  if (status === "warning") return <Badge variant="secondary">Warning</Badge>;
+  if (status === "fail") return <Badge variant="destructive">Fail</Badge>;
+  return <Badge variant="outline">{status === "not_applicable" ? "Not applicable" : "Not recorded"}</Badge>;
+}
+
 export default function ModelPerformance() {
+  const queryClient = useQueryClient();
   const registryQuery = useQuery<Registry>({
     queryKey: ["/api/models/versions"],
     queryFn: async () => {
@@ -57,10 +72,19 @@ export default function ModelPerformance() {
   const evaluationQuery = useGetModelEvaluation({
     query: { queryKey: getGetModelEvaluationQueryKey(), staleTime: 30_000 },
   });
+  const runChecksMutation = useRunModelEvaluationChecks({
+    mutation: {
+      onSuccess: (data) => {
+        queryClient.setQueryData(getGetModelEvaluationQueryKey(), data);
+        void registryQuery.refetch();
+      },
+    },
+  });
   const versions = registryQuery.data?.versions ?? [];
   const active = versions.find(version => version.isActive);
   const evaluation = evaluationQuery.data?.evaluation ?? null;
   const confusionMatrix = evaluation?.heldOutTest.confusionMatrix ?? null;
+  const trustChecks = evaluation?.trustChecks ?? null;
   const loading = registryQuery.isLoading || evaluationQuery.isLoading;
 
   return (
@@ -75,6 +99,33 @@ export default function ModelPerformance() {
             void evaluationQuery.refetch();
           }}
         />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Recompute baselines, shuffled-label, seed-stability, and data checks for the active v2 configuration.
+          </p>
+          <Button
+            onClick={() => runChecksMutation.mutate()}
+            disabled={runChecksMutation.isPending || !active}
+          >
+            {runChecksMutation.isPending
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> Running checks…</>
+              : <><Play className="h-4 w-4" /> Run checks</>}
+          </Button>
+        </div>
+        {runChecksMutation.isError && (
+          <Alert variant="destructive">
+            <AlertDescription>
+              {runChecksMutation.error instanceof Error
+                ? runChecksMutation.error.message
+                : "The result trust checks could not be completed."}
+            </AlertDescription>
+          </Alert>
+        )}
+        {runChecksMutation.isSuccess && (
+          <Alert>
+            <AlertDescription>Result trust checks were recomputed and stored for the active model.</AlertDescription>
+          </Alert>
+        )}
 
         {registryQuery.isError && (
           <Alert variant="destructive">
@@ -202,6 +253,213 @@ export default function ModelPerformance() {
                       </TableBody>
                     </Table>
                   </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="px-4 pt-4 pb-2">
+                    <CardTitle className="text-base">Result Trust Checks</CardTitle>
+                  </CardHeader>
+                  {!trustChecks ? (
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        No trust-check results are stored yet. Select “Run checks” to compute them using the fixed development and held-out partitions.
+                      </p>
+                    </CardContent>
+                  ) : (
+                    <CardContent className="space-y-5">
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <Badge variant="outline">Active model: {trustChecks.modelVersionId ?? "Not recorded"}</Badge>
+                        <span>
+                          Computed {trustChecks.computedAt ? new Date(trustChecks.computedAt).toLocaleString() : "Not recorded"}
+                        </span>
+                      </div>
+
+                      <section className="space-y-2">
+                        <h3 className="text-sm font-semibold">Baseline comparison</h3>
+                        <p className="text-xs text-muted-foreground">
+                          Internal cross-validation uses the same stratified development folds; the held-out test set is only scored.
+                          HistGradientBoosting v2 reuses the stored evaluation above, preserving those original results.
+                        </p>
+                        {trustChecks.baselineModels?.length ? (
+                          <div className="overflow-x-auto">
+                            <Table className="min-w-[880px]">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Model</TableHead>
+                                  <TableHead>Internal CV accuracy</TableHead>
+                                  <TableHead>Internal CV weighted F1</TableHead>
+                                  <TableHead>Held-out accuracy</TableHead>
+                                  <TableHead>Held-out weighted F1</TableHead>
+                                  <TableHead>Held-out macro F1</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {trustChecks.baselineModels.map((row, index) => (
+                                  <TableRow key={row.model ?? index}>
+                                    <TableCell className="font-medium">{row.model ?? "Not recorded"}</TableCell>
+                                    <TableCell>{meanStdPercent(row.developmentCV?.accuracy)}</TableCell>
+                                    <TableCell>{meanStdPercent(row.developmentCV?.weightedF1)}</TableCell>
+                                    <TableCell>{percent(row.heldOutTest?.accuracy)}</TableCell>
+                                    <TableCell>{percent(row.heldOutTest?.weightedF1)}</TableCell>
+                                    <TableCell>{percent(row.heldOutTest?.macroF1)}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Baseline scores are not recorded.</p>
+                        )}
+                      </section>
+
+                      <section className="space-y-2 rounded-md border p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-sm font-semibold">Shuffled-label test</h3>
+                          {statusBadge(trustChecks.shuffledLabelTest?.status)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Mean internal CV accuracy: <strong>{percent(trustChecks.shuffledLabelTest?.meanAccuracy)}</strong>
+                          {" "}· chance: {percent(trustChecks.shuffledLabelTest?.chanceAccuracy)}
+                          {" "}· class-prevalence chance: {percent(trustChecks.shuffledLabelTest?.prevalenceChanceAccuracy)}
+                          {" "}· warning threshold: above {percent(trustChecks.shuffledLabelTest?.warningThreshold)}
+                          {" "}· shuffle seed: {trustChecks.shuffledLabelTest?.seed ?? "Not recorded"}
+                        </p>
+                        {trustChecks.shuffledLabelTest?.status === "warning" && (
+                          <Alert variant="destructive">
+                            <AlertDescription>
+                              Shuffled labels scored clearly above the configured chance threshold. Review for leakage before interpreting model scores.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </section>
+
+                      <section className="space-y-2">
+                        <h3 className="text-sm font-semibold">Seed stability — internal cross-validation</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Five independent stratified fold assignments; summary is the mean and standard deviation of each seed’s 5-fold mean.
+                          Seeds: {trustChecks.seedStability?.seeds?.join(", ") ?? "Not recorded"}.
+                        </p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="rounded-md border p-3">
+                            <div className="text-xs text-muted-foreground">Accuracy across seeds</div>
+                            <div className="font-semibold">{meanStdPercent(trustChecks.seedStability?.accuracy)}</div>
+                          </div>
+                          <div className="rounded-md border p-3">
+                            <div className="text-xs text-muted-foreground">Weighted F1 across seeds</div>
+                            <div className="font-semibold">{meanStdPercent(trustChecks.seedStability?.weightedF1)}</div>
+                          </div>
+                        </div>
+                        {trustChecks.seedStability?.runs?.length ? (
+                          <div className="overflow-x-auto">
+                            <Table className="min-w-[620px]">
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Seed</TableHead>
+                                  <TableHead>Fold</TableHead>
+                                  <TableHead>Accuracy</TableHead>
+                                  <TableHead>Weighted F1</TableHead>
+                                  <TableHead>Seed accuracy mean</TableHead>
+                                  <TableHead>Seed weighted F1 mean</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {trustChecks.seedStability.runs.flatMap((run, runIndex) =>
+                                  (run.foldScores ?? []).map((fold, foldIndex) => (
+                                    <TableRow key={`${run.seed ?? runIndex}-${fold.fold ?? foldIndex}`}>
+                                      <TableCell>{run.seed ?? "Not recorded"}</TableCell>
+                                      <TableCell>{fold.fold ?? "Not recorded"}</TableCell>
+                                      <TableCell>{percent(fold.accuracy)}</TableCell>
+                                      <TableCell>{percent(fold.weightedF1)}</TableCell>
+                                      <TableCell>{percent(run.accuracyMean)}</TableCell>
+                                      <TableCell>{percent(run.weightedF1Mean)}</TableCell>
+                                    </TableRow>
+                                  )),
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Per-fold seed scores are not recorded.</p>
+                        )}
+                      </section>
+
+                      <section className="space-y-2">
+                        <h3 className="text-sm font-semibold">Leakage and data checks</h3>
+                        {trustChecks.dataChecks?.checklist?.length ? (
+                          <div className="space-y-2">
+                            {trustChecks.dataChecks.checklist.map((check, index) => (
+                              <div key={check.key ?? index} className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                  <div className="text-sm font-medium">{(check.key ?? "Check").replaceAll(/([A-Z])/g, " $1")}</div>
+                                  <div className="text-xs text-muted-foreground">{check.details ?? "Details not recorded."}</div>
+                                </div>
+                                {statusBadge(check.status)}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">Leakage checklist is not recorded.</p>
+                        )}
+                        <div className="grid gap-2 text-sm sm:grid-cols-2">
+                          <p>Exact duplicate samples in full cohort: <strong>{trustChecks.dataChecks?.exactDuplicateSamples ?? "Not recorded"}</strong></p>
+                          <p>Exact gene vectors shared across partitions: <strong>{trustChecks.dataChecks?.exactDuplicateVectorsAcrossPartitions ?? "Not recorded"}</strong></p>
+                          <p>Samples with all 50 gene features missing: <strong>{trustChecks.dataChecks?.allFeaturesMissingSamples ?? "Not recorded"}</strong></p>
+                          <p>Sample ID column: <strong>{trustChecks.dataChecks?.sampleIdColumn ?? "Not available"}</strong></p>
+                          <p>Sample IDs shared across partitions: <strong>{trustChecks.dataChecks?.sampleIdOverlapCount ?? "Not applicable"}</strong></p>
+                          <p>Metadata columns present: <strong>{trustChecks.dataChecks?.metadataColumnsFound?.join(", ") || "Not recorded"}</strong></p>
+                          <p>Forbidden feature columns: <strong>{trustChecks.dataChecks?.forbiddenFeatureColumns?.join(", ") || "None"}</strong></p>
+                          <p>Features exclude ID/cohort/label columns: <strong>{trustChecks.dataChecks?.featuresExcludeMetadata == null ? "Not recorded" : trustChecks.dataChecks.featuresExcludeMetadata ? "Yes" : "No"}</strong></p>
+                          <p>Overall missing gene values: <strong>{percent(trustChecks.dataChecks?.missingValues?.overallRate)}</strong></p>
+                        </div>
+                        {trustChecks.dataChecks?.missingValues?.topGenes?.length ? (
+                          <div>
+                            <div className="mb-1 text-sm font-medium">Genes with the highest missing-value rates</div>
+                            <Table>
+                              <TableHeader><TableRow><TableHead>Gene</TableHead><TableHead>Missing</TableHead></TableRow></TableHeader>
+                              <TableBody>
+                                {trustChecks.dataChecks.missingValues.topGenes.map((gene, index) => (
+                                  <TableRow key={gene.gene ?? index}>
+                                    <TableCell>{gene.gene ?? "Not recorded"}</TableCell>
+                                    <TableCell>{percent(gene.missingRate)}</TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : null}
+                        {trustChecks.dataChecks?.classCounts && (
+                          <div className="overflow-x-auto">
+                            <div className="mb-1 text-sm font-medium">Class counts per partition</div>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Partition</TableHead>
+                                  {["BRCA", "LUAD", "COAD", "GBM", "PRAD"].map(label => <TableHead key={label}>{label}</TableHead>)}
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {[
+                                  ["Full cohort", trustChecks.dataChecks.classCounts.fullCohort],
+                                  ["Development", trustChecks.dataChecks.classCounts.development],
+                                  ["Held-out test", trustChecks.dataChecks.classCounts.heldOut],
+                                ].map(([partition, counts]) => {
+                                  const values = counts as NonNullable<typeof trustChecks.dataChecks.classCounts.fullCohort>;
+                                  return (
+                                    <TableRow key={partition as string}>
+                                      <TableCell className="font-medium">{partition as string}</TableCell>
+                                      {["BRCA", "LUAD", "COAD", "GBM", "PRAD"].map(label => (
+                                        <TableCell key={label}>{values?.[label as keyof typeof values] ?? "Not recorded"}</TableCell>
+                                      ))}
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        )}
+                      </section>
+                    </CardContent>
+                  )}
                 </Card>
 
                 <Card>

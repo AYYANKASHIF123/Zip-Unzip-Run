@@ -1,0 +1,46 @@
+In the GeneClassifier project, the held-out evaluation already exists (80/20 split, seed 42, development-only 5-fold CV, per-class metrics, confusion matrix). Do NOT change those results, the active v2 serving model, or prediction behavior. Now add only the remaining "Result Trust Checks" below.
+
+First, check what is already implemented and list anything from this prompt that already exists, so nothing is duplicated.
+
+Use the same TCGA-derived data, the same 80/20 split (seed 42) and the same pipeline: median imputation, standard scaling, HistGradientBoostingClassifier, with imputation and scaling fitted inside each training fold. Run all checks on the 2,664-sample development set, and score on the 666-sample held-out set only where stated.
+
+1. Baselines (same stratified 5-fold CV folds as the active model's development CV, and the same held-out set)
+- Majority-class baseline.
+- Logistic regression.
+- Random Forest.
+- For each: development CV accuracy and weighted F1 (mean ± std), plus held-out accuracy, weighted F1 and macro F1.
+
+2. Shuffled-label test
+- Shuffle the development-set labels (fixed seed), run the same 5-fold CV, and report mean accuracy. Expected result is near chance (about 20% for 5 classes).
+- If it is clearly above chance, show a visible leakage warning.
+
+3. Seed stability
+- Repeat stratified 5-fold CV on the development set with 5 different random seeds (42, 1, 7, 21, 99).
+- Report mean and standard deviation of accuracy and weighted F1 across seeds, and show the per-fold scores.
+
+4. Leakage and data checks
+- Count exact duplicate samples (identical gene vectors) in the full cohort, and confirm none appear in both the development and held-out sets.
+- If a patient or sample ID is available, confirm no ID appears in both sets.
+- Confirm that no ID, cohort or label column is among the 50 model features.
+- Report class counts for the full cohort, the development set and the held-out set.
+- Report the missing-value rate per gene (top 5 highest) and overall.
+
+5. Storage and API
+- Save all results in the model registry entry for the active v2 model, alongside the existing evaluation, with seeds and a timestamp.
+- Extend GET /api/models/evaluation to return them. Any value not computed must be null. Never return placeholder or invented numbers. Update the OpenAPI spec and generated types.
+
+6. Web app (Model Performance page)
+- Add a "Result Trust Checks" section with:
+  a) a baselines comparison table (majority, logistic regression, Random Forest, HistGradientBoosting v2),
+  b) the shuffled-label result with a pass/warning badge,
+  c) the seed-stability summary and per-fold scores,
+  d) a leakage and data-checks checklist with pass/fail for each item,
+  e) class counts per partition.
+- Label sections clearly: "Internal cross-validation" and "Held-out test set (20% of TCGA cohort)". Keep the "not external validation" note and the research-use disclaimer.
+- Add a "Run checks" button that recomputes and stores the results.
+
+Rules:
+- Show only metrics that are actually computed. No demo or illustrative values.
+- Keep code simple, with short comments explaining why the held-out set is never used for training or tuning.
+
+When finished, run the checks once so the page shows real numbers. Then summarize the files changed and list: the shuffled-label accuracy, the seed standard deviation, each baseline's held-out accuracy, and any warning that was triggered.

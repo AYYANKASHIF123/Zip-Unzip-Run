@@ -731,12 +731,146 @@ router.get("/models/evaluation", async (req: Request, res: Response): Promise<vo
       const number = numberOrNull(value);
       return number !== null && Number.isInteger(number) ? number : null;
     };
+    const stringOrNull = (value: unknown): string | null =>
+      typeof value === "string" ? value : null;
+    const stringArrayOrNull = (value: unknown): string[] | null =>
+      Array.isArray(value) && value.every(item => typeof item === "string") ? value : null;
+    const integerArrayOrNull = (value: unknown): number[] | null =>
+      Array.isArray(value) && value.every(item => Number.isInteger(item)) ? value : null;
+    const enumValueOrNull = (value: unknown, allowed: string[]): string | null =>
+      typeof value === "string" && allowed.includes(value) ? value : null;
     const meanStdOrNull = (value: unknown): { mean: number | null; std: number | null } | null => {
       if (!value || typeof value !== "object" || Array.isArray(value)) return null;
       const metric = asRecord(value);
       return {
         mean: numberOrNull(metric.mean),
         std: numberOrNull(metric.std),
+      };
+    };
+    const performanceMetrics = (value: unknown) => {
+      const metrics = asRecord(value);
+      return {
+        accuracy: numberOrNull(metrics.accuracy),
+        weightedF1: numberOrNull(metrics.weightedF1),
+        macroF1: numberOrNull(metrics.macroF1),
+      };
+    };
+    const dataCounts = (value: unknown) => {
+      const counts = asRecord(value);
+      const partition = (part: unknown) => {
+        const values = asRecord(part);
+        return {
+          BRCA: integerOrNull(values.BRCA),
+          LUAD: integerOrNull(values.LUAD),
+          COAD: integerOrNull(values.COAD),
+          GBM: integerOrNull(values.GBM),
+          PRAD: integerOrNull(values.PRAD),
+        };
+      };
+      return {
+        fullCohort: counts.fullCohort ? partition(counts.fullCohort) : null,
+        development: counts.development ? partition(counts.development) : null,
+        heldOut: counts.heldOut ? partition(counts.heldOut) : null,
+      };
+    };
+    const trustChecksOrNull = (value: unknown) => {
+      if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+      const trust = asRecord(value);
+      const baselines = Array.isArray(trust.baselineModels)
+        ? trust.baselineModels.map((item) => {
+            const row = asRecord(item);
+            const developmentCV = asRecord(row.developmentCV);
+            return {
+              model: stringOrNull(row.model),
+              developmentCV: {
+                accuracy: meanStdOrNull(developmentCV.accuracy),
+                weightedF1: meanStdOrNull(developmentCV.weightedF1),
+              },
+              heldOutTest: performanceMetrics(row.heldOutTest),
+            };
+          })
+        : null;
+      const shuffled = asRecord(trust.shuffledLabelTest);
+      const stability = asRecord(trust.seedStability);
+      const stabilityRuns = Array.isArray(stability.runs)
+        ? stability.runs.map((item) => {
+            const run = asRecord(item);
+            const foldScores = Array.isArray(run.foldScores)
+              ? run.foldScores.map((foldItem) => {
+                  const fold = asRecord(foldItem);
+                  return {
+                    fold: integerOrNull(fold.fold),
+                    accuracy: numberOrNull(fold.accuracy),
+                    weightedF1: numberOrNull(fold.weightedF1),
+                  };
+                })
+              : null;
+            return {
+              seed: integerOrNull(run.seed),
+              accuracyMean: numberOrNull(run.accuracyMean),
+              weightedF1Mean: numberOrNull(run.weightedF1Mean),
+              foldScores,
+            };
+          })
+        : null;
+      const data = asRecord(trust.dataChecks);
+      const missing = asRecord(data.missingValues);
+      const topGenes = Array.isArray(missing.topGenes)
+        ? missing.topGenes.map((item) => {
+            const gene = asRecord(item);
+            return {
+              gene: stringOrNull(gene.gene),
+              missingRate: numberOrNull(gene.missingRate),
+            };
+          })
+        : null;
+      const checklist = Array.isArray(data.checklist)
+        ? data.checklist.map((item) => {
+            const check = asRecord(item);
+            return {
+              key: stringOrNull(check.key),
+              status: enumValueOrNull(check.status, ["pass", "fail", "warning", "not_applicable"]),
+              details: stringOrNull(check.details),
+            };
+          })
+        : null;
+      const classCounts = dataCounts(data.classCounts);
+      return {
+        computedAt: stringOrNull(trust.computedAt),
+        modelVersionId: stringOrNull(trust.modelVersionId),
+        shuffleSeed: integerOrNull(trust.shuffleSeed),
+        stabilitySeeds: integerArrayOrNull(trust.stabilitySeeds),
+        baselineModels: baselines,
+        shuffledLabelTest: {
+          seed: integerOrNull(shuffled.seed),
+          meanAccuracy: numberOrNull(shuffled.meanAccuracy),
+          chanceAccuracy: numberOrNull(shuffled.chanceAccuracy),
+          prevalenceChanceAccuracy: numberOrNull(shuffled.prevalenceChanceAccuracy),
+          warningThreshold: numberOrNull(shuffled.warningThreshold),
+          status: enumValueOrNull(shuffled.status, ["pass", "warning"]),
+        },
+        seedStability: {
+          seeds: integerArrayOrNull(stability.seeds),
+          accuracy: meanStdOrNull(stability.accuracy),
+          weightedF1: meanStdOrNull(stability.weightedF1),
+          runs: stabilityRuns,
+        },
+        dataChecks: {
+          exactDuplicateSamples: integerOrNull(data.exactDuplicateSamples),
+          exactDuplicateVectorsAcrossPartitions: integerOrNull(data.exactDuplicateVectorsAcrossPartitions),
+          allFeaturesMissingSamples: integerOrNull(data.allFeaturesMissingSamples),
+          sampleIdColumn: stringOrNull(data.sampleIdColumn),
+          sampleIdOverlapCount: integerOrNull(data.sampleIdOverlapCount),
+          metadataColumnsFound: stringArrayOrNull(data.metadataColumnsFound),
+          forbiddenFeatureColumns: stringArrayOrNull(data.forbiddenFeatureColumns),
+          featuresExcludeMetadata: typeof data.featuresExcludeMetadata === "boolean" ? data.featuresExcludeMetadata : null,
+          classCounts,
+          missingValues: {
+            overallRate: numberOrNull(missing.overallRate),
+            topGenes,
+          },
+          checklist,
+        },
       };
     };
 
@@ -781,11 +915,30 @@ router.get("/models/evaluation", async (req: Request, res: Response): Promise<vo
           perClass,
           confusionMatrix: hasConfusionMatrix ? confusionMatrix : null,
         },
+        trustChecks: trustChecksOrNull(evaluation.trustChecks),
       },
     });
   } catch (err) {
     req.log.error({ err }, "Failed to fetch model evaluation");
     res.status(503).json({ error: "ML service unavailable" });
+  }
+});
+
+router.post("/models/evaluation/checks/run", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const response = await fetch("http://localhost:8000/ml/models/evaluation/checks/run", {
+      method: "POST",
+      signal: AbortSignal.timeout(600_000),
+    });
+    const data = await response.json() as Record<string, unknown>;
+    if (!response.ok) {
+      res.status(response.status).json({ error: data.detail ?? "Result trust checks failed" });
+      return;
+    }
+    res.json(data);
+  } catch (err) {
+    req.log.error({ err }, "Model result trust checks failed");
+    res.status(503).json({ error: "ML service unavailable or checks timed out" });
   }
 });
 

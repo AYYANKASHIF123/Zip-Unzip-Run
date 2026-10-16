@@ -138,6 +138,367 @@
               ]
             ]
           }
+        },
+        "trustChecks": {
+          "computedAt": "2026-10-16T05:38:39.752519+00:00",
+          "modelVersionId": "v2",
+          "shuffleSeed": 42,
+          "stabilitySeeds": [
+            42,
+            1,
+            7,
+            21,
+            99
+          ],
+          "baselineModels": [
+            {
+              "model": "Majority-class",
+              "developmentCV": {
+                "accuracy": {
+                  "mean": 0.325451,
+                  "std": 0.001087
+                },
+                "weightedF1": {
+                  "mean": 0.159823,
+                  "std": 0.000937
+                }
+              },
+              "heldOutTest": {
+                "accuracy": 0.325826,
+                "weightedF1": 0.160145,
+                "macroF1": 0.098301
+              }
+            },
+            {
+              "model": "Logistic regression",
+              "developmentCV": {
+                "accuracy": {
+                  "mean": 0.294301,
+                  "std": 0.015576
+                },
+                "weightedF1": {
+                  "mean": 0.202435,
+                  "std": 0.013537
+                }
+              },
+              "heldOutTest": {
+                "accuracy": 0.313814,
+                "weightedF1": 0.20239,
+                "macroF1": 0.14983
+              }
+            },
+            {
+              "model": "Random Forest",
+              "developmentCV": {
+                "accuracy": {
+                  "mean": 0.757127,
+                  "std": 0.018698
+                },
+                "weightedF1": {
+                  "mean": 0.747625,
+                  "std": 0.020533
+                }
+              },
+              "heldOutTest": {
+                "accuracy": 0.755255,
+                "weightedF1": 0.746455,
+                "macroF1": 0.737357
+              }
+            },
+            {
+              "model": "HistGradientBoosting v2",
+              "developmentCV": {
+                "accuracy": {
+                  "mean": 0.841964,
+                  "std": 0.008138
+                },
+                "weightedF1": {
+                  "mean": 0.838656,
+                  "std": 0.008507
+                }
+              },
+              "heldOutTest": {
+                "accuracy": 0.861862,
+                "weightedF1": 0.859996,
+                "macroF1": 0.851425
+              }
+            }
+          ],
+          "shuffledLabelTest": {
+            "seed": 42,
+            "meanAccuracy": 0.278156,
+            "chanceAccuracy": 0.2,
+            "prevalenceChanceAccuracy": 0.220269,
+            "warningThreshold": 0.25,
+            "status": "warning"
+          },
+          "seedStability": {
+            "seeds": [
+              42,
+              1,
+              7,
+              21,
+              99
+            ],
+            "accuracy": {
+              "mean": 0.844596,
+              "std": 0.001679
+            },
+            "weightedF1": {
+              "mean": 0.84183,
+              "std": 0.001922
+            },
+            "runs": [
+              {
+                "seed": 42,
+                "accuracyMean": 0.841964,
+                "weightedF1Mean": 0.838656,
+                "foldScores": [
+                  {
+                    "fold": 1,
+                    "accuracy": 0.846154,
+                    "weightedF1": 0.84168
+                  },
+                  {
+                    "fold": 2,
+                    "accuracy": 0.853659,
+                    "weightedF1": 0.851432
+                  },
+                  {
+                    "fold": 3,
+                    "accuracy": 0.831144,
+                    "weightedF1": 0.826454
+                  },
+                  {
+                    "fold": 4,
+                    "accuracy": 0.844278,
+                    "weightedF1": 0.840988
+                  },
+                  {
+                    "fold": 5,
+                    "accuracy": 0.834586,
+                    "weightedF1": 0.832725
+                  }
+                ]
+              },
+              {
+                "seed": 1,
+                "accuracyMean": 0.844971,
+                "weightedF1Mean": 0.842376,
+                "foldScores": [
+                  {
+                    "fold": 1,
+                    "accuracy": 0.851782,
+                    "weightedF1": 0.849416
+                  },
+                  {
+                    "fold": 2,
+                    "accuracy": 0.849906,
+                    "weightedF1": 0.847491
+                  },
+                  {
+                    "fold": 3,
+                    "accuracy": 0.834897,
+                    "weightedF1": 0.832128
+                  },
+                  {
+                    "fold": 4,
+                    "accuracy": 0.840525,
+                    "weightedF1": 0.838488
+                  },
+                  {
+                    "fold": 5,
+                    "accuracy": 0.847744,
+                    "weightedF1": 0.844356
+                  }
+                ]
+              },
+              {
+                "seed": 7,
+                "accuracyMean": 0.846474,
+                "weightedF1Mean": 0.843808,
+                "foldScores": [
+                  {
+                    "fold": 1,
+                    "accuracy": 0.87242,
+                    "weightedF1": 0.869083
+                  },
+                  {
+                    "fold": 2,
+                    "accuracy": 0.827392,
+                    "weightedF1": 0.825279
+                  },
+                  {
+                    "fold": 3,
+                    "accuracy": 0.833021,
+                    "weightedF1": 0.830429
+                  },
+                  {
+                    "fold": 4,
+                    "accuracy": 0.846154,
+                    "weightedF1": 0.843291
+                  },
+                  {
+                    "fold": 5,
+                    "accuracy": 0.853383,
+                    "weightedF1": 0.850956
+                  }
+                ]
+              },
+              {
+                "seed": 21,
+                "accuracyMean": 0.843474,
+                "weightedF1Mean": 0.840745,
+                "foldScores": [
+                  {
+                    "fold": 1,
+                    "accuracy": 0.831144,
+                    "weightedF1": 0.827951
+                  },
+                  {
+                    "fold": 2,
+                    "accuracy": 0.834897,
+                    "weightedF1": 0.831144
+                  },
+                  {
+                    "fold": 3,
+                    "accuracy": 0.84803,
+                    "weightedF1": 0.845171
+                  },
+                  {
+                    "fold": 4,
+                    "accuracy": 0.846154,
+                    "weightedF1": 0.843788
+                  },
+                  {
+                    "fold": 5,
+                    "accuracy": 0.857143,
+                    "weightedF1": 0.855669
+                  }
+                ]
+              },
+              {
+                "seed": 99,
+                "accuracyMean": 0.846095,
+                "weightedF1Mean": 0.843564,
+                "foldScores": [
+                  {
+                    "fold": 1,
+                    "accuracy": 0.851782,
+                    "weightedF1": 0.849412
+                  },
+                  {
+                    "fold": 2,
+                    "accuracy": 0.834897,
+                    "weightedF1": 0.832211
+                  },
+                  {
+                    "fold": 3,
+                    "accuracy": 0.855535,
+                    "weightedF1": 0.853215
+                  },
+                  {
+                    "fold": 4,
+                    "accuracy": 0.844278,
+                    "weightedF1": 0.842219
+                  },
+                  {
+                    "fold": 5,
+                    "accuracy": 0.843985,
+                    "weightedF1": 0.840762
+                  }
+                ]
+              }
+            ]
+          },
+          "dataChecks": {
+            "exactDuplicateSamples": 492,
+            "exactDuplicateVectorsAcrossPartitions": 1,
+            "allFeaturesMissingSamples": 493,
+            "sampleIdColumn": "sample_id",
+            "sampleIdOverlapCount": 0,
+            "metadataColumnsFound": [
+              "sample_id",
+              "subtype"
+            ],
+            "forbiddenFeatureColumns": [],
+            "featuresExcludeMetadata": true,
+            "classCounts": {
+              "fullCohort": {
+                "BRCA": 1084,
+                "LUAD": 566,
+                "COAD": 594,
+                "GBM": 592,
+                "PRAD": 494
+              },
+              "development": {
+                "BRCA": 867,
+                "LUAD": 453,
+                "COAD": 475,
+                "GBM": 474,
+                "PRAD": 395
+              },
+              "heldOut": {
+                "BRCA": 217,
+                "LUAD": 113,
+                "COAD": 119,
+                "GBM": 118,
+                "PRAD": 99
+              }
+            },
+            "missingValues": {
+              "overallRate": 0.148048,
+              "topGenes": [
+                {
+                  "gene": "ERBB2",
+                  "missingRate": 0.148048
+                },
+                {
+                  "gene": "PIK3CA",
+                  "missingRate": 0.148048
+                },
+                {
+                  "gene": "PTEN",
+                  "missingRate": 0.148048
+                },
+                {
+                  "gene": "BRAF",
+                  "missingRate": 0.148048
+                },
+                {
+                  "gene": "KRAS",
+                  "missingRate": 0.148048
+                }
+              ]
+            },
+            "checklist": [
+              {
+                "key": "duplicateVectorsAcrossPartitions",
+                "status": "fail",
+                "details": "1 exact gene-vector matches occur in both partitions; 493 samples have all 50 gene values missing."
+              },
+              {
+                "key": "sampleIdsAcrossPartitions",
+                "status": "pass",
+                "details": "0 shared IDs across development and held-out partitions (sample_id)."
+              },
+              {
+                "key": "metadataExcludedFromFeatures",
+                "status": "pass",
+                "details": "None of the 50 features are ID, cohort, or label columns."
+              },
+              {
+                "key": "missingValues",
+                "status": "warning",
+                "details": "14.80% of gene values are missing, including 493 samples with all 50 features missing; median imputation is fit inside each CV training fold."
+              },
+              {
+                "key": "shuffledLabels",
+                "status": "warning",
+                "details": "Shuffled-label accuracy 27.82%; warning threshold is above 25% (chance for five classes is 20%)."
+              }
+            ]
+          }
         }
       }
     },

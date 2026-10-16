@@ -624,7 +624,256 @@ export const GetModelEvaluationResponse = zod.object({
   "labels": zod.array(zod.string()),
   "values": zod.array(zod.array(zod.number()))
 }).nullable()
+}),
+  "trustChecks": zod.object({
+  "computedAt": zod.coerce.date().nullable(),
+  "modelVersionId": zod.string().nullable(),
+  "shuffleSeed": zod.number().nullable(),
+  "stabilitySeeds": zod.array(zod.number()).nullable(),
+  "baselineModels": zod.array(zod.object({
+  "model": zod.string().nullable(),
+  "developmentCV": zod.object({
+  "accuracy": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "weightedF1": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable()
+}),
+  "heldOutTest": zod.object({
+  "accuracy": zod.number().nullable(),
+  "weightedF1": zod.number().nullable(),
+  "macroF1": zod.number().nullable()
 })
+})).nullable(),
+  "shuffledLabelTest": zod.object({
+  "seed": zod.number().nullable(),
+  "meanAccuracy": zod.number().nullable(),
+  "chanceAccuracy": zod.number().nullable(),
+  "prevalenceChanceAccuracy": zod.number().nullish(),
+  "warningThreshold": zod.number().nullable(),
+  "status": zod.union([zod.literal('pass'),zod.literal('warning'),zod.literal(null)]).nullable()
+}),
+  "seedStability": zod.object({
+  "seeds": zod.array(zod.number()).nullable(),
+  "accuracy": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "weightedF1": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "runs": zod.array(zod.object({
+  "seed": zod.number().nullable(),
+  "accuracyMean": zod.number().nullable(),
+  "weightedF1Mean": zod.number().nullable(),
+  "foldScores": zod.array(zod.object({
+  "fold": zod.number().nullable(),
+  "accuracy": zod.number().nullable(),
+  "weightedF1": zod.number().nullable()
+})).nullable()
+})).nullable()
+}),
+  "dataChecks": zod.object({
+  "exactDuplicateSamples": zod.number().nullable(),
+  "exactDuplicateVectorsAcrossPartitions": zod.number().nullable(),
+  "allFeaturesMissingSamples": zod.number().nullable(),
+  "sampleIdColumn": zod.string().nullable(),
+  "sampleIdOverlapCount": zod.number().nullable(),
+  "metadataColumnsFound": zod.array(zod.string()).nullable(),
+  "forbiddenFeatureColumns": zod.array(zod.string()).nullable(),
+  "featuresExcludeMetadata": zod.boolean().nullable(),
+  "classCounts": zod.object({
+  "fullCohort": zod.object({
+  "BRCA": zod.number().nullable(),
+  "LUAD": zod.number().nullable(),
+  "COAD": zod.number().nullable(),
+  "GBM": zod.number().nullable(),
+  "PRAD": zod.number().nullable()
+}).nullable(),
+  "development": zod.object({
+  "BRCA": zod.number().nullable(),
+  "LUAD": zod.number().nullable(),
+  "COAD": zod.number().nullable(),
+  "GBM": zod.number().nullable(),
+  "PRAD": zod.number().nullable()
+}).nullable(),
+  "heldOut": zod.object({
+  "BRCA": zod.number().nullable(),
+  "LUAD": zod.number().nullable(),
+  "COAD": zod.number().nullable(),
+  "GBM": zod.number().nullable(),
+  "PRAD": zod.number().nullable()
+}).nullable()
+}),
+  "missingValues": zod.object({
+  "overallRate": zod.number().nullable(),
+  "topGenes": zod.array(zod.object({
+  "gene": zod.string().nullable(),
+  "missingRate": zod.number().nullable()
+})).nullable()
+}),
+  "checklist": zod.array(zod.object({
+  "key": zod.string().nullable(),
+  "status": zod.union([zod.literal('pass'),zod.literal('fail'),zod.literal('warning'),zod.literal('not_applicable'),zod.literal(null)]).nullable(),
+  "details": zod.string().nullable()
+})).nullable()
+})
+}).nullable()
+}).nullable()
+})
+
+
+/**
+ * @summary Recompute result trust checks for the active model
+ */
+export const RunModelEvaluationChecksResponse = zod.object({
+  "activeVersionId": zod.string().nullable(),
+  "evaluation": zod.object({
+  "modelVersionId": zod.string().nullable(),
+  "evaluatedAt": zod.coerce.date().nullable(),
+  "split": zod.object({
+  "totalSamples": zod.number(),
+  "developmentSamples": zod.number(),
+  "testSamples": zod.number(),
+  "testFraction": zod.number(),
+  "randomState": zod.number(),
+  "subtypeOrder": zod.array(zod.string())
+}).nullable(),
+  "crossValidation": zod.object({
+  "nSplits": zod.number().nullable(),
+  "metrics": zod.object({
+  "accuracy": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "weightedF1": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "macroF1": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable()
+})
+}),
+  "heldOutTest": zod.object({
+  "accuracy": zod.number().nullable(),
+  "weightedF1": zod.number().nullable(),
+  "macroF1": zod.number().nullable(),
+  "perClass": zod.array(zod.object({
+  "subtype": zod.string().nullable(),
+  "precision": zod.number().nullable(),
+  "recall": zod.number().nullable(),
+  "f1": zod.number().nullable(),
+  "support": zod.number().nullable()
+})).nullable(),
+  "confusionMatrix": zod.object({
+  "labels": zod.array(zod.string()),
+  "values": zod.array(zod.array(zod.number()))
+}).nullable()
+}),
+  "trustChecks": zod.object({
+  "computedAt": zod.coerce.date().nullable(),
+  "modelVersionId": zod.string().nullable(),
+  "shuffleSeed": zod.number().nullable(),
+  "stabilitySeeds": zod.array(zod.number()).nullable(),
+  "baselineModels": zod.array(zod.object({
+  "model": zod.string().nullable(),
+  "developmentCV": zod.object({
+  "accuracy": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "weightedF1": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable()
+}),
+  "heldOutTest": zod.object({
+  "accuracy": zod.number().nullable(),
+  "weightedF1": zod.number().nullable(),
+  "macroF1": zod.number().nullable()
+})
+})).nullable(),
+  "shuffledLabelTest": zod.object({
+  "seed": zod.number().nullable(),
+  "meanAccuracy": zod.number().nullable(),
+  "chanceAccuracy": zod.number().nullable(),
+  "prevalenceChanceAccuracy": zod.number().nullish(),
+  "warningThreshold": zod.number().nullable(),
+  "status": zod.union([zod.literal('pass'),zod.literal('warning'),zod.literal(null)]).nullable()
+}),
+  "seedStability": zod.object({
+  "seeds": zod.array(zod.number()).nullable(),
+  "accuracy": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "weightedF1": zod.object({
+  "mean": zod.number().nullable(),
+  "std": zod.number().nullable()
+}).nullable(),
+  "runs": zod.array(zod.object({
+  "seed": zod.number().nullable(),
+  "accuracyMean": zod.number().nullable(),
+  "weightedF1Mean": zod.number().nullable(),
+  "foldScores": zod.array(zod.object({
+  "fold": zod.number().nullable(),
+  "accuracy": zod.number().nullable(),
+  "weightedF1": zod.number().nullable()
+})).nullable()
+})).nullable()
+}),
+  "dataChecks": zod.object({
+  "exactDuplicateSamples": zod.number().nullable(),
+  "exactDuplicateVectorsAcrossPartitions": zod.number().nullable(),
+  "allFeaturesMissingSamples": zod.number().nullable(),
+  "sampleIdColumn": zod.string().nullable(),
+  "sampleIdOverlapCount": zod.number().nullable(),
+  "metadataColumnsFound": zod.array(zod.string()).nullable(),
+  "forbiddenFeatureColumns": zod.array(zod.string()).nullable(),
+  "featuresExcludeMetadata": zod.boolean().nullable(),
+  "classCounts": zod.object({
+  "fullCohort": zod.object({
+  "BRCA": zod.number().nullable(),
+  "LUAD": zod.number().nullable(),
+  "COAD": zod.number().nullable(),
+  "GBM": zod.number().nullable(),
+  "PRAD": zod.number().nullable()
+}).nullable(),
+  "development": zod.object({
+  "BRCA": zod.number().nullable(),
+  "LUAD": zod.number().nullable(),
+  "COAD": zod.number().nullable(),
+  "GBM": zod.number().nullable(),
+  "PRAD": zod.number().nullable()
+}).nullable(),
+  "heldOut": zod.object({
+  "BRCA": zod.number().nullable(),
+  "LUAD": zod.number().nullable(),
+  "COAD": zod.number().nullable(),
+  "GBM": zod.number().nullable(),
+  "PRAD": zod.number().nullable()
+}).nullable()
+}),
+  "missingValues": zod.object({
+  "overallRate": zod.number().nullable(),
+  "topGenes": zod.array(zod.object({
+  "gene": zod.string().nullable(),
+  "missingRate": zod.number().nullable()
+})).nullable()
+}),
+  "checklist": zod.array(zod.object({
+  "key": zod.string().nullable(),
+  "status": zod.union([zod.literal('pass'),zod.literal('fail'),zod.literal('warning'),zod.literal('not_applicable'),zod.literal(null)]).nullable(),
+  "details": zod.string().nullable()
+})).nullable()
+})
+}).nullable()
 }).nullable()
 })
 

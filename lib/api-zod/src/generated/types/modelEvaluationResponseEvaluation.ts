@@ -8,6 +8,7 @@
 import type { DevelopmentCrossValidation } from './developmentCrossValidation';
 import type { EvaluationSplit } from './evaluationSplit';
 import type { HeldOutTestMetrics } from './heldOutTestMetrics';
+import type { ModelTrustChecks } from './modelTrustChecks';
 
 /**
  * @nullable
@@ -20,4 +21,5 @@ export type ModelEvaluationResponseEvaluation = {
   split: EvaluationSplit | null;
   crossValidation: DevelopmentCrossValidation;
   heldOutTest: HeldOutTestMetrics;
+  trustChecks: ModelTrustChecks | null;
 } | null;

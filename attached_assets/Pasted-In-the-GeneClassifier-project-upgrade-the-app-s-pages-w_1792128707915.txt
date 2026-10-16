@@ -1,0 +1,63 @@
+In the GeneClassifier project, upgrade the app's pages with real, computed data. Do NOT change the active v2 model, prediction behavior, the held-out evaluation, or the Model Performance page's existing results.
+
+GLOBAL RULES (apply to every page)
+- Every number, chart and table must come from one of three sources, shown as a small badge on that card:
+  "Computed" (calculated from the TCGA-derived cohort or the app's own records),
+  "Reference" (from a named public source, shown with source name and version/date),
+  "Simulation" (a real procedure run on real data, but not a real-world deployment).
+- Never invent values. If real data is not available, show a clear "Data not loaded" empty state that says what is needed. Remove old seeded or illustrative numbers instead of keeping them.
+- Cache heavy computations (PCA, UMAP, etc.) in the ML service, and store results with a timestamp and the data version.
+- Keep the research-use disclaimer. Keep the code simple and typed (update OpenAPI spec and generated types for new endpoints).
+- First list what each page currently shows, then work through the phases below. Do not break existing routes.
+
+PHASE 1 - ADVANCED RESEARCH PREVIEW (top priority)
+
+1. Validation Pipeline (/validation-pipeline) - make it a real evaluator
+- Upload a labeled CSV (sample ID, 50 genes, true label). Run the active model and show accuracy, weighted/macro F1, per-class precision/recall/F1, confusion matrix, and the share of samples with low gene coverage.
+- Report it as "External validation" only if the uploaded data is not from the training cohort; otherwise label it "Uploaded labeled data". Check for samples that duplicate training rows and warn about them.
+- Store results in the API's records and allow CSV export. Show the real state "No dataset validated yet" when empty.
+
+2. GNN Research Preview (/gnn-preview) - train a real graph model
+- Download a protein-interaction network from STRING (human, confidence >= 700) restricted to the 50 model genes. Record the source and version.
+- Train a small GNN (PyTorch Geometric or plain PyTorch GCN) where genes are nodes and each sample's expression is the node value, using the same 80/20 split and the same development CV folds as v2.
+- Also train an MLP baseline with the same split. Report accuracy, weighted F1 and macro F1 for GNN, MLP and HistGradientBoosting v2 side by side, with training time. If the GNN does not beat v2, say so plainly.
+- Keep GNN as an experimental model: do not make it the active model.
+
+3. PPI Network (/ppi-network) - real network
+- Draw the real STRING network for the 50 genes (nodes sized by permutation importance, edges by interaction score). Show degree, top hub genes and connected components. Cite STRING.
+
+4. Multi-Omics (/multi-omics)
+- Check whether mutation or copy-number data for the same TCGA PanCancer Atlas samples can be downloaded from cBioPortal. If yes, add mutation/CNA features for the 50 genes, train a separate experimental model with expression only vs expression + mutation/CNA, and compare on the same split. If data cannot be downloaded, show the "Data not loaded" state with exact instructions instead of illustrative charts.
+
+5. Federated Learning (/federated-learning) - real simulation
+- Split the development set into 3 to 5 simulated "labs" (with an option for unequal class mixes), run FedAvg with a logistic-regression or MLP model for several rounds, and plot accuracy per round on the held-out set against a centralized baseline. Label it "Simulation". No real distributed training is claimed.
+
+6. EHR / FHIR Integration (/ehr-integration)
+- Generate a valid FHIR R4 DiagnosticReport + Observation bundle from a real analysis (subtype, probabilities, model version, disclaimer). Show the JSON, validate it against the FHIR schema, and offer download. State clearly that no EHR is connected and no patient data is exchanged.
+
+7. Enterprise Deployment (/enterprise-deployment)
+- Add real Dockerfile(s) and a docker-compose file for web app, API and ML service, plus an .env.example and a short deployment README. Show the actual file contents and service health checks on the page. Remove any claim of an executed deployment.
+
+8. Research Paper (/research-paper)
+- Fill the manuscript with live numbers pulled from the registry and evaluation endpoints (dataset size, split, CV, held-out, baselines, trust checks), so the text never drifts from the results. Add a "Last updated" stamp and export to Markdown.
+
+9. Mobile Preview (/mobile-preview)
+- Show the real Quick Classify and Results pages in a phone-width frame. Make sure the main pages are responsive.
+
+PHASE 2 - ML AND RESEARCH PAGES
+- Genomics Explorer: compute heatmap (top variable genes), PCA, and UMAP from the real cohort, colored by subtype. Report explained variance.
+- Biomarker Discovery: compute per-subtype differential expression (one-vs-rest, effect size, p-value with Benjamini-Hochberg FDR) from the cohort. Show volcano plots and top genes per subtype.
+- Pathway Analysis: run real enrichment (for example gseapy with KEGG/GO) on the genes from Biomarker Discovery. Note when the 50-gene panel is too small for meaningful enrichment, and name the gene-set library and version.
+- Gene Library: link each of the 50 genes to computed stats (mean expression per subtype, permutation importance rank) and a reference description from a named source (e.g. NCBI Gene).
+- Survival Analysis: if overall-survival clinical data for the same samples can be downloaded from cBioPortal, compute real Kaplan-Meier curves and log-rank tests by predicted/true subtype. Otherwise show "Data not loaded".
+- Drug Sensitivity: use a real public dataset (for example GDSC) only if it can be downloaded; otherwise show "Data not loaded". Do not keep seeded scores.
+- Explainable AI: add a SHAP comparison next to permutation importance, and show a rank-stability plot across CV folds.
+- Sample Comparison: compare analyses using real per-sample probabilities and top driving genes.
+
+PHASE 3 - CORE AND ADMIN PAGES
+- Dashboard, Reports, Notifications, Audit Logs, Pipeline Monitor: replace seeded counts with real values from the app's analysis records, and real logged events (upload, prediction, export, training run). Persist analysis records and the audit log in a database (not memory) so they survive restarts.
+- Results page: replace the sample-ID-generated expression panel and CSV export with the actual submitted gene values.
+- Planning pages (Roadmap, Business, Investor, Competitive, etc.): keep them, but label every readiness percentage as "Self-assessed estimate", and pull any model numbers from the live registry.
+
+WHEN DONE
+Summarize per page: what is now Computed, Reference or Simulation, what shows "Data not loaded", and any external data you could not download. Then list the files changed.

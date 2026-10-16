@@ -2378,3 +2378,73 @@ export function useGetModelEvaluation<TData = Awaited<ReturnType<typeof getModel
 
 
 
+export const getRunModelEvaluationChecksUrl = () => {
+
+
+
+
+  return `/api/models/evaluation/checks/run`
+}
+
+/**
+ * @summary Recompute result trust checks for the active model
+ */
+export const runModelEvaluationChecks = async ( options?: RequestInit): Promise<ModelEvaluationResponse> => {
+
+  return customFetch<ModelEvaluationResponse>(getRunModelEvaluationChecksUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getRunModelEvaluationChecksMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runModelEvaluationChecks>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof runModelEvaluationChecks>>, TError,void, TContext> => {
+
+const mutationKey = ['runModelEvaluationChecks'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof runModelEvaluationChecks>>, void> = () => {
+
+
+          return  runModelEvaluationChecks(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RunModelEvaluationChecksMutationResult = NonNullable<Awaited<ReturnType<typeof runModelEvaluationChecks>>>
+
+    export type RunModelEvaluationChecksMutationError = ErrorType<void>
+
+    /**
+ * @summary Recompute result trust checks for the active model
+ */
+export const useRunModelEvaluationChecks = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof runModelEvaluationChecks>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof runModelEvaluationChecks>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRunModelEvaluationChecksMutationOptions(options));
+    }
+

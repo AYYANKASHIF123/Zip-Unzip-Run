@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from model import (
     load_or_train_model, predict, explain, train_new_version,
-    load_registry, FEATURE_GENES,
+    load_registry, FEATURE_GENES, run_result_trust_checks,
 )
 
 app = FastAPI(title="GeneClassifier ML Service", version="1.0.0")
@@ -118,6 +118,27 @@ async def explain_endpoint(file: UploadFile = File(...)):
 def list_models():
     """Return all trained model versions from the registry."""
     return load_registry()
+
+
+@app.post("/ml/models/evaluation/checks/run")
+def run_model_evaluation_checks():
+    try:
+        run_result_trust_checks()
+        registry = load_registry()
+        active = next(
+            (version for version in registry.get("versions", []) if version.get("isActive")),
+            None,
+        )
+        if active is None:
+            raise RuntimeError("No active model is registered after checks")
+        return {
+            "activeVersionId": registry.get("activeVersionId"),
+            "evaluation": active.get("evaluation"),
+        }
+    except RuntimeError as exc:
+        raise HTTPException(409, str(exc))
+    except Exception as exc:
+        raise HTTPException(500, f"Result trust checks failed: {exc}")
 
 
 class TrainRequest(BaseModel):

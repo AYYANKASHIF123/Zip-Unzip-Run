@@ -492,6 +492,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/ModelEvaluationResponse"
 
+  /models/evaluation/checks/run:
+    post:
+      operationId: runModelEvaluationChecks
+      tags: [metrics]
+      summary: Recompute result trust checks for the active model
+      responses:
+        "200":
+          description: Updated evaluation and result trust checks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelEvaluationResponse"
+        "409":
+          description: Checks cannot run while model work is in progress or the held-out evaluation is unavailable
+        "503":
+          description: ML service unavailable or checks timed out
+
 components:
   schemas:
     ModelEvaluationResponse:
@@ -502,7 +519,7 @@ components:
           type: ["string", "null"]
         evaluation:
           type: ["object", "null"]
-          required: [modelVersionId, evaluatedAt, split, crossValidation, heldOutTest]
+          required: [modelVersionId, evaluatedAt, split, crossValidation, heldOutTest, trustChecks]
           properties:
             modelVersionId:
               type: ["string", "null"]
@@ -515,6 +532,8 @@ components:
               $ref: "#/components/schemas/DevelopmentCrossValidation"
             heldOutTest:
               $ref: "#/components/schemas/HeldOutTestMetrics"
+            trustChecks:
+              $ref: "#/components/schemas/ModelTrustChecks"
 
     EvaluationSplit:
       type: ["object", "null"]
@@ -607,6 +626,215 @@ components:
             type: array
             items:
               type: integer
+
+    ModelTrustChecks:
+      type: ["object", "null"]
+      required: [computedAt, modelVersionId, shuffleSeed, stabilitySeeds, baselineModels, shuffledLabelTest, seedStability, dataChecks]
+      properties:
+        computedAt:
+          type: ["string", "null"]
+          format: date-time
+        modelVersionId:
+          type: ["string", "null"]
+        shuffleSeed:
+          type: ["integer", "null"]
+        stabilitySeeds:
+          type: ["array", "null"]
+          items:
+            type: integer
+        baselineModels:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/BaselineModelMetrics"
+        shuffledLabelTest:
+          $ref: "#/components/schemas/ShuffledLabelTest"
+        seedStability:
+          $ref: "#/components/schemas/SeedStability"
+        dataChecks:
+          $ref: "#/components/schemas/ModelDataChecks"
+
+    BaselineModelMetrics:
+      type: object
+      required: [model, developmentCV, heldOutTest]
+      properties:
+        model:
+          type: ["string", "null"]
+        developmentCV:
+          $ref: "#/components/schemas/BaselineCrossValidation"
+        heldOutTest:
+          $ref: "#/components/schemas/BaselineHeldOutMetrics"
+
+    BaselineCrossValidation:
+      type: object
+      required: [accuracy, weightedF1]
+      properties:
+        accuracy:
+          $ref: "#/components/schemas/MeanStdMetric"
+        weightedF1:
+          $ref: "#/components/schemas/MeanStdMetric"
+
+    BaselineHeldOutMetrics:
+      type: object
+      required: [accuracy, weightedF1, macroF1]
+      properties:
+        accuracy:
+          type: ["number", "null"]
+        weightedF1:
+          type: ["number", "null"]
+        macroF1:
+          type: ["number", "null"]
+
+    ShuffledLabelTest:
+      type: object
+      required: [seed, meanAccuracy, chanceAccuracy, warningThreshold, status]
+      properties:
+        seed:
+          type: ["integer", "null"]
+        meanAccuracy:
+          type: ["number", "null"]
+        chanceAccuracy:
+          type: ["number", "null"]
+        prevalenceChanceAccuracy:
+          type: ["number", "null"]
+        warningThreshold:
+          type: ["number", "null"]
+        status:
+          type: ["string", "null"]
+          enum: [pass, warning, null]
+
+    SeedStability:
+      type: object
+      required: [seeds, accuracy, weightedF1, runs]
+      properties:
+        seeds:
+          type: ["array", "null"]
+          items:
+            type: integer
+        accuracy:
+          $ref: "#/components/schemas/MeanStdMetric"
+        weightedF1:
+          $ref: "#/components/schemas/MeanStdMetric"
+        runs:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/SeedStabilityRun"
+
+    SeedStabilityRun:
+      type: object
+      required: [seed, accuracyMean, weightedF1Mean, foldScores]
+      properties:
+        seed:
+          type: ["integer", "null"]
+        accuracyMean:
+          type: ["number", "null"]
+        weightedF1Mean:
+          type: ["number", "null"]
+        foldScores:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/SeedFoldScore"
+
+    SeedFoldScore:
+      type: object
+      required: [fold, accuracy, weightedF1]
+      properties:
+        fold:
+          type: ["integer", "null"]
+        accuracy:
+          type: ["number", "null"]
+        weightedF1:
+          type: ["number", "null"]
+
+    ModelDataChecks:
+      type: object
+      required: [exactDuplicateSamples, exactDuplicateVectorsAcrossPartitions, allFeaturesMissingSamples, sampleIdColumn, sampleIdOverlapCount, metadataColumnsFound, forbiddenFeatureColumns, featuresExcludeMetadata, classCounts, missingValues, checklist]
+      properties:
+        exactDuplicateSamples:
+          type: ["integer", "null"]
+        exactDuplicateVectorsAcrossPartitions:
+          type: ["integer", "null"]
+        allFeaturesMissingSamples:
+          type: ["integer", "null"]
+        sampleIdColumn:
+          type: ["string", "null"]
+        sampleIdOverlapCount:
+          type: ["integer", "null"]
+        metadataColumnsFound:
+          type: ["array", "null"]
+          items:
+            type: string
+        forbiddenFeatureColumns:
+          type: ["array", "null"]
+          items:
+            type: string
+        featuresExcludeMetadata:
+          type: ["boolean", "null"]
+        classCounts:
+          $ref: "#/components/schemas/ModelClassCounts"
+        missingValues:
+          $ref: "#/components/schemas/MissingValueChecks"
+        checklist:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/TrustCheckItem"
+
+    ModelClassCounts:
+      type: object
+      required: [fullCohort, development, heldOut]
+      properties:
+        fullCohort:
+          $ref: "#/components/schemas/SubtypeCounts"
+        development:
+          $ref: "#/components/schemas/SubtypeCounts"
+        heldOut:
+          $ref: "#/components/schemas/SubtypeCounts"
+
+    SubtypeCounts:
+      type: ["object", "null"]
+      required: [BRCA, LUAD, COAD, GBM, PRAD]
+      properties:
+        BRCA:
+          type: ["integer", "null"]
+        LUAD:
+          type: ["integer", "null"]
+        COAD:
+          type: ["integer", "null"]
+        GBM:
+          type: ["integer", "null"]
+        PRAD:
+          type: ["integer", "null"]
+
+    MissingValueChecks:
+      type: object
+      required: [overallRate, topGenes]
+      properties:
+        overallRate:
+          type: ["number", "null"]
+        topGenes:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/GeneMissingRate"
+
+    GeneMissingRate:
+      type: object
+      required: [gene, missingRate]
+      properties:
+        gene:
+          type: ["string", "null"]
+        missingRate:
+          type: ["number", "null"]
+
+    TrustCheckItem:
+      type: object
+      required: [key, status, details]
+      properties:
+        key:
+          type: ["string", "null"]
+        status:
+          type: ["string", "null"]
+          enum: [pass, fail, warning, not_applicable, null]
+        details:
+          type: ["string", "null"]
 
     HealthStatus:
       type: object
