@@ -22,6 +22,7 @@ tags:
   - name: notifications
   - name: datasets
   - name: comparison
+  - name: research
 
 paths:
   /healthz:
@@ -508,6 +509,278 @@ paths:
           description: Checks cannot run while model work is in progress or the held-out evaluation is unavailable
         "503":
           description: ML service unavailable or checks timed out
+
+  /research/status:
+    get:
+      operationId: getResearchDataStatus
+      tags: [research]
+      summary: Data availability and dataset manifest for research pages
+      responses:
+        "200":
+          description: Current source and data availability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchDataStatus"
+
+  /research/ppi:
+    get:
+      operationId: getResearchPpi
+      tags: [research]
+      summary: STRING interaction network for the model gene panel
+      responses:
+        "200":
+          description: Cached STRING network and source metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchPpiResponse"
+
+  /research/genomics:
+    get:
+      operationId: getResearchGenomics
+      tags: [research]
+      summary: Computed expression heatmap, PCA, UMAP and differential expression
+      responses:
+        "200":
+          description: Computed cohort visualizations with cache provenance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchGenomicsResponse"
+
+  /research/biomarkers:
+    get:
+      operationId: getResearchBiomarkers
+      tags: [research]
+      summary: One-versus-rest differential expression results
+      responses:
+        "200":
+          description: Computed effect sizes and FDR-adjusted p-values
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ComputedBiomarker"
+
+  /research/pathways:
+    get:
+      operationId: getResearchPathways
+      tags: [research]
+      summary: Gene-set enrichment from computed biomarkers
+      responses:
+        "200":
+          description: Enrichment results or explicit unavailable state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchPathwayResponse"
+
+  /research/genes:
+    get:
+      operationId: getResearchGenes
+      tags: [research]
+      summary: Statistics for the model gene panel
+      responses:
+        "200":
+          description: Computed gene statistics with optional reference annotations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ResearchGene"
+
+  /research/survival:
+    get:
+      operationId: getResearchSurvival
+      tags: [research]
+      summary: Survival analysis availability for the source cohort
+      responses:
+        "200":
+          description: Computed survival data or requirements for loading it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchDataAvailability"
+
+  /research/drugs:
+    get:
+      operationId: getResearchDrugData
+      tags: [research]
+      summary: Public drug-response data availability
+      responses:
+        "200":
+          description: Drug-response data or requirements for loading it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchDataAvailability"
+
+  /research/multi-omics:
+    get:
+      operationId: getResearchMultiOmics
+      tags: [research]
+      summary: Availability of matched mutation and copy-number data
+      responses:
+        "200":
+          description: Match status and required inputs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchDataAvailability"
+
+  /research/xai:
+    get:
+      operationId: getResearchXai
+      tags: [research]
+      summary: Research-only feature attribution comparison and fold stability
+      responses:
+        "200":
+          description: Computed approximation and cross-validation rank stability
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResearchXaiResponse"
+
+  /research/gnn/run:
+    post:
+      operationId: runResearchGnn
+      tags: [research]
+      summary: Train experimental GCN and MLP baselines without changing the active model
+      responses:
+        "200":
+          description: Cached or newly computed experimental comparison
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GnnComparisonResponse"
+
+  /research/federated/run:
+    post:
+      operationId: runFederatedSimulation
+      tags: [research]
+      summary: Run a local FedAvg simulation on the development split
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FederatedSimulationInput"
+      responses:
+        "200":
+          description: Simulation metrics by round and centralized baseline
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FederatedSimulationResponse"
+
+  /validation-pipeline/evaluate:
+    post:
+      operationId: evaluateExternalDataset
+      tags: [research]
+      summary: Evaluate uploaded labeled samples using the active model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExternalValidationInput"
+      responses:
+        "201":
+          description: Persisted labeled-data evaluation and per-sample predictions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalValidationResult"
+        "400":
+          description: Invalid labels or expression data
+
+  /validation-pipeline/runs:
+    get:
+      operationId: listValidationRuns
+      tags: [research]
+      summary: List persisted labeled-data validation runs
+      responses:
+        "200":
+          description: Validation run summaries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ValidationRunSummary"
+
+  /validation-pipeline/runs/{id}:
+    get:
+      operationId: getValidationRun
+      tags: [research]
+      summary: Get a persisted labeled-data validation run
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExternalValidationResult"
+        "404":
+          description: Run not found
+
+  /analyses/{id}/fhir:
+    get:
+      operationId: getAnalysisFhirBundle
+      tags: [research]
+      summary: Generate and validate an R4 DiagnosticReport bundle for a saved analysis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: FHIR R4 bundle and local structural validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhirBundleResponse"
+        "404":
+          description: Analysis not found
+
+  /enterprise/package:
+    get:
+      operationId: getEnterprisePackageStatus
+      tags: [research]
+      summary: Inspect deployment files and service health without claiming deployment
+      responses:
+        "200":
+          description: File contents and current service health checks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnterprisePackageResponse"
+
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [research]
+      summary: List persisted application audit events
+      responses:
+        "200":
+          description: Most recent audit records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLogEntry"
 
 components:
   schemas:
@@ -1660,3 +1933,229 @@ components:
           type: number
         interactionType:
           type: string
+
+    ResearchDataStatus:
+      type: object
+      required: [dataVersion, sampleCount, geneCount, subtypes, sources, computedAt]
+      properties:
+        dataVersion: { type: string }
+        sampleCount: { type: integer }
+        geneCount: { type: integer }
+        subtypes:
+          type: array
+          items: { type: string }
+        sources:
+          type: array
+          items: { type: string }
+        computedAt: { type: string, format: date-time }
+        modelVersion: { type: ["string", "null"] }
+
+    ResearchDataAvailability:
+      type: object
+      required: [status, title, reason, requiredInputs, checkedSources]
+      properties:
+        status: { type: string, enum: [ready, not_loaded] }
+        title: { type: string }
+        reason: { type: string }
+        requiredInputs:
+          type: array
+          items: { type: string }
+        checkedSources:
+          type: array
+          items: { type: string }
+        sourceVersion: { type: ["string", "null"] }
+        checkedAt: { type: ["string", "null"], format: date-time }
+
+    ResearchPpiResponse:
+      type: object
+      required: [source, sourceVersion, species, requiredScore, nodes, edges, components, computedAt, dataVersion]
+      properties:
+        source: { type: string }
+        sourceVersion: { type: string }
+        species: { type: string }
+        requiredScore: { type: integer }
+        nodes: { type: array, items: { type: object, additionalProperties: true } }
+        edges: { type: array, items: { type: object, additionalProperties: true } }
+        components: { type: array, items: { type: array, items: { type: string } } }
+        computedAt: { type: string, format: date-time }
+        dataVersion: { type: string }
+
+    ResearchGenomicsResponse:
+      type: object
+      required: [computedAt, dataVersion, sampleCount, geneCount, heatmap, pca, umap, volcano]
+      properties:
+        computedAt: { type: string, format: date-time }
+        dataVersion: { type: string }
+        sampleCount: { type: integer }
+        geneCount: { type: integer }
+        heatmap: { type: object, additionalProperties: true }
+        pca: { type: object, additionalProperties: true }
+        umap: { type: object, additionalProperties: true }
+        volcano: { type: object, additionalProperties: true }
+
+    ComputedBiomarker:
+      type: object
+      required: [gene, subtype, effectSize, pValue, adjustedPValue, meanInSubtype, meanOther, direction]
+      properties:
+        gene: { type: string }
+        subtype: { type: string }
+        effectSize: { type: number }
+        pValue: { type: number }
+        adjustedPValue: { type: number }
+        meanInSubtype: { type: number }
+        meanOther: { type: number }
+        direction: { type: string }
+
+    ResearchPathwayResponse:
+      type: object
+      required: [status, library, libraryVersion, computedAt, terms, note]
+      properties:
+        status: { type: string, enum: [ready, not_loaded] }
+        library: { type: string }
+        libraryVersion: { type: string }
+        computedAt: { type: ["string", "null"], format: date-time }
+        note: { type: string }
+        terms: { type: array, items: { type: object, additionalProperties: true } }
+
+    ResearchGene:
+      type: object
+      required: [gene, meanBySubtype, overallMean, overallStd, importanceRank]
+      properties:
+        gene: { type: string }
+        meanBySubtype: { type: object, additionalProperties: { type: number } }
+        overallMean: { type: number }
+        overallStd: { type: number }
+        importanceRank: { type: ["integer", "null"] }
+        description: { type: ["string", "null"] }
+        descriptionSource: { type: ["string", "null"] }
+
+    ResearchXaiResponse:
+      type: object
+      required: [status, method, computedAt, dataVersion, values, foldStability, note]
+      properties:
+        status: { type: string, enum: [ready, not_loaded] }
+        method: { type: string }
+        computedAt: { type: ["string", "null"], format: date-time }
+        dataVersion: { type: ["string", "null"] }
+        values: { type: array, items: { type: object, additionalProperties: true } }
+        foldStability: { type: array, items: { type: object, additionalProperties: true } }
+        note: { type: string }
+
+    GnnComparisonResponse:
+      type: object
+      required: [computedAt, dataVersion, source, split, graph, models]
+      properties:
+        computedAt: { type: string, format: date-time }
+        dataVersion: { type: string }
+        source: { type: string }
+        split: { type: object, additionalProperties: true }
+        graph: { type: object, additionalProperties: true }
+        models: { type: array, items: { type: object, additionalProperties: true } }
+
+    FederatedSimulationInput:
+      type: object
+      required: [clients, rounds, unequalClassMix]
+      properties:
+        clients: { type: integer, minimum: 3, maximum: 5 }
+        rounds: { type: integer, minimum: 3, maximum: 30 }
+        unequalClassMix: { type: boolean }
+
+    FederatedSimulationResponse:
+      type: object
+      required: [computedAt, dataVersion, label, clients, rounds, unequalClassMix, centralized, history]
+      properties:
+        computedAt: { type: string, format: date-time }
+        dataVersion: { type: string }
+        label: { type: string, enum: [Simulation] }
+        clients: { type: integer }
+        rounds: { type: integer }
+        unequalClassMix: { type: boolean }
+        centralized: { type: object, additionalProperties: true }
+        history: { type: array, items: { type: object, additionalProperties: true } }
+
+    ExternalValidationSample:
+      type: object
+      required: [sampleId, trueSubtype, values]
+      properties:
+        sampleId: { type: string, minLength: 1 }
+        trueSubtype: { type: string }
+        values:
+          type: object
+          additionalProperties: { type: ["number", "null"] }
+
+    ExternalValidationInput:
+      type: object
+      required: [sourceName, samples]
+      properties:
+        sourceName: { type: string, minLength: 1 }
+        sourceVersion: { type: ["string", "null"] }
+        samples:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items: { $ref: "#/components/schemas/ExternalValidationSample" }
+
+    ValidationRunSummary:
+      type: object
+      required: [id, createdAt, sourceName, sampleCount, evaluationLabel]
+      properties:
+        id: { type: string }
+        createdAt: { type: string, format: date-time }
+        sourceName: { type: string }
+        sampleCount: { type: integer }
+        evaluationLabel: { type: string }
+        accuracy: { type: ["number", "null"] }
+        weightedF1: { type: ["number", "null"] }
+        macroF1: { type: ["number", "null"] }
+
+    ExternalValidationResult:
+      type: object
+      required: [id, createdAt, sourceName, evaluationLabel, sampleCount, metrics, perClass, confusionMatrix, duplicateWarnings, lowCoverageShare, predictions]
+      properties:
+        id: { type: string }
+        createdAt: { type: string, format: date-time }
+        sourceName: { type: string }
+        sourceVersion: { type: ["string", "null"] }
+        evaluationLabel: { type: string }
+        sampleCount: { type: integer }
+        metrics: { type: object, additionalProperties: true }
+        perClass: { type: array, items: { type: object, additionalProperties: true } }
+        confusionMatrix: { type: object, additionalProperties: true }
+        duplicateWarnings: { type: array, items: { type: object, additionalProperties: true } }
+        lowCoverageShare: { type: number }
+        predictions: { type: array, items: { type: object, additionalProperties: true } }
+        activeModelVersion: { type: ["string", "null"] }
+
+    FhirBundleResponse:
+      type: object
+      required: [standard, valid, validationMessages, bundle]
+      properties:
+        standard: { type: string, enum: ["FHIR R4 4.0.1"] }
+        valid: { type: boolean }
+        validationMessages: { type: array, items: { type: string } }
+        bundle: { type: object, additionalProperties: true }
+
+    EnterpriseFile:
+      type: object
+      required: [path, exists, content]
+      properties:
+        path: { type: string }
+        exists: { type: boolean }
+        content: { type: ["string", "null"] }
+
+    EnterprisePackageResponse:
+      type: object
+      required: [deploymentExecuted, files, healthChecks]
+      properties:
+        deploymentExecuted: { type: boolean, enum: [false] }
+        files: { type: array, items: { $ref: "#/components/schemas/EnterpriseFile" } }
+        healthChecks: { type: array, items: { type: object, additionalProperties: true } }
+
+    AuditLogEntry:
+      type: object
+      required: [id, event, createdAt, details]
+      properties:
+        id: { type: string }
+        event: { type: string }
+        createdAt: { type: string, format: date-time }
+        details: { type: object, additionalProperties: true }

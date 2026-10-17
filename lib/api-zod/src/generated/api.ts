@@ -878,3 +878,291 @@ export const RunModelEvaluationChecksResponse = zod.object({
 })
 
 
+/**
+ * @summary Data availability and dataset manifest for research pages
+ */
+export const GetResearchDataStatusResponse = zod.object({
+  "dataVersion": zod.string(),
+  "sampleCount": zod.number(),
+  "geneCount": zod.number(),
+  "subtypes": zod.array(zod.string()),
+  "sources": zod.array(zod.string()),
+  "computedAt": zod.coerce.date(),
+  "modelVersion": zod.string().nullish()
+})
+
+
+/**
+ * @summary STRING interaction network for the model gene panel
+ */
+export const GetResearchPpiResponse = zod.object({
+  "source": zod.string(),
+  "sourceVersion": zod.string(),
+  "species": zod.string(),
+  "requiredScore": zod.number(),
+  "nodes": zod.array(zod.record(zod.string(), zod.unknown())),
+  "edges": zod.array(zod.record(zod.string(), zod.unknown())),
+  "components": zod.array(zod.array(zod.string())),
+  "computedAt": zod.coerce.date(),
+  "dataVersion": zod.string()
+})
+
+
+/**
+ * @summary Computed expression heatmap, PCA, UMAP and differential expression
+ */
+export const GetResearchGenomicsResponse = zod.object({
+  "computedAt": zod.coerce.date(),
+  "dataVersion": zod.string(),
+  "sampleCount": zod.number(),
+  "geneCount": zod.number(),
+  "heatmap": zod.record(zod.string(), zod.unknown()),
+  "pca": zod.record(zod.string(), zod.unknown()),
+  "umap": zod.record(zod.string(), zod.unknown()),
+  "volcano": zod.record(zod.string(), zod.unknown())
+})
+
+
+/**
+ * @summary One-versus-rest differential expression results
+ */
+export const GetResearchBiomarkersResponseItem = zod.object({
+  "gene": zod.string(),
+  "subtype": zod.string(),
+  "effectSize": zod.number(),
+  "pValue": zod.number(),
+  "adjustedPValue": zod.number(),
+  "meanInSubtype": zod.number(),
+  "meanOther": zod.number(),
+  "direction": zod.string()
+})
+export const GetResearchBiomarkersResponse = zod.array(GetResearchBiomarkersResponseItem)
+
+
+/**
+ * @summary Gene-set enrichment from computed biomarkers
+ */
+export const GetResearchPathwaysResponse = zod.object({
+  "status": zod.enum(['ready', 'not_loaded']),
+  "library": zod.string(),
+  "libraryVersion": zod.string(),
+  "computedAt": zod.coerce.date().nullable(),
+  "note": zod.string(),
+  "terms": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+/**
+ * @summary Statistics for the model gene panel
+ */
+export const GetResearchGenesResponseItem = zod.object({
+  "gene": zod.string(),
+  "meanBySubtype": zod.record(zod.string(), zod.number()),
+  "overallMean": zod.number(),
+  "overallStd": zod.number(),
+  "importanceRank": zod.number().nullable(),
+  "description": zod.string().nullish(),
+  "descriptionSource": zod.string().nullish()
+})
+export const GetResearchGenesResponse = zod.array(GetResearchGenesResponseItem)
+
+
+/**
+ * @summary Survival analysis availability for the source cohort
+ */
+export const GetResearchSurvivalResponse = zod.object({
+  "status": zod.enum(['ready', 'not_loaded']),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "requiredInputs": zod.array(zod.string()),
+  "checkedSources": zod.array(zod.string()),
+  "sourceVersion": zod.string().nullish(),
+  "checkedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Public drug-response data availability
+ */
+export const GetResearchDrugDataResponse = zod.object({
+  "status": zod.enum(['ready', 'not_loaded']),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "requiredInputs": zod.array(zod.string()),
+  "checkedSources": zod.array(zod.string()),
+  "sourceVersion": zod.string().nullish(),
+  "checkedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Availability of matched mutation and copy-number data
+ */
+export const GetResearchMultiOmicsResponse = zod.object({
+  "status": zod.enum(['ready', 'not_loaded']),
+  "title": zod.string(),
+  "reason": zod.string(),
+  "requiredInputs": zod.array(zod.string()),
+  "checkedSources": zod.array(zod.string()),
+  "sourceVersion": zod.string().nullish(),
+  "checkedAt": zod.coerce.date().nullish()
+})
+
+
+/**
+ * @summary Research-only feature attribution comparison and fold stability
+ */
+export const GetResearchXaiResponse = zod.object({
+  "status": zod.enum(['ready', 'not_loaded']),
+  "method": zod.string(),
+  "computedAt": zod.coerce.date().nullable(),
+  "dataVersion": zod.string().nullable(),
+  "values": zod.array(zod.record(zod.string(), zod.unknown())),
+  "foldStability": zod.array(zod.record(zod.string(), zod.unknown())),
+  "note": zod.string()
+})
+
+
+/**
+ * @summary Train experimental GCN and MLP baselines without changing the active model
+ */
+export const RunResearchGnnResponse = zod.object({
+  "computedAt": zod.coerce.date(),
+  "dataVersion": zod.string(),
+  "source": zod.string(),
+  "split": zod.record(zod.string(), zod.unknown()),
+  "graph": zod.record(zod.string(), zod.unknown()),
+  "models": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+/**
+ * @summary Run a local FedAvg simulation on the development split
+ */
+export const runFederatedSimulationBodyClientsMin = 3;
+export const runFederatedSimulationBodyClientsMax = 5;
+
+export const runFederatedSimulationBodyRoundsMin = 3;
+export const runFederatedSimulationBodyRoundsMax = 30;
+
+
+
+export const RunFederatedSimulationBody = zod.object({
+  "clients": zod.number().min(runFederatedSimulationBodyClientsMin).max(runFederatedSimulationBodyClientsMax),
+  "rounds": zod.number().min(runFederatedSimulationBodyRoundsMin).max(runFederatedSimulationBodyRoundsMax),
+  "unequalClassMix": zod.boolean()
+})
+
+export const RunFederatedSimulationResponse = zod.object({
+  "computedAt": zod.coerce.date(),
+  "dataVersion": zod.string(),
+  "label": zod.enum(['Simulation']),
+  "clients": zod.number(),
+  "rounds": zod.number(),
+  "unequalClassMix": zod.boolean(),
+  "centralized": zod.record(zod.string(), zod.unknown()),
+  "history": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+/**
+ * @summary Evaluate uploaded labeled samples using the active model
+ */
+
+
+export const evaluateExternalDatasetBodySamplesMax = 500;
+
+
+
+export const EvaluateExternalDatasetBody = zod.object({
+  "sourceName": zod.string().min(1),
+  "sourceVersion": zod.string().nullish(),
+  "samples": zod.array(zod.object({
+  "sampleId": zod.string().min(1),
+  "trueSubtype": zod.string(),
+  "values": zod.record(zod.string(), zod.number().nullable())
+})).min(1).max(evaluateExternalDatasetBodySamplesMax)
+})
+
+
+/**
+ * @summary List persisted labeled-data validation runs
+ */
+export const ListValidationRunsResponseItem = zod.object({
+  "id": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "sourceName": zod.string(),
+  "sampleCount": zod.number(),
+  "evaluationLabel": zod.string(),
+  "accuracy": zod.number().nullish(),
+  "weightedF1": zod.number().nullish(),
+  "macroF1": zod.number().nullish()
+})
+export const ListValidationRunsResponse = zod.array(ListValidationRunsResponseItem)
+
+
+/**
+ * @summary Get a persisted labeled-data validation run
+ */
+export const GetValidationRunParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetValidationRunResponse = zod.object({
+  "id": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "sourceName": zod.string(),
+  "sourceVersion": zod.string().nullish(),
+  "evaluationLabel": zod.string(),
+  "sampleCount": zod.number(),
+  "metrics": zod.record(zod.string(), zod.unknown()),
+  "perClass": zod.array(zod.record(zod.string(), zod.unknown())),
+  "confusionMatrix": zod.record(zod.string(), zod.unknown()),
+  "duplicateWarnings": zod.array(zod.record(zod.string(), zod.unknown())),
+  "lowCoverageShare": zod.number(),
+  "predictions": zod.array(zod.record(zod.string(), zod.unknown())),
+  "activeModelVersion": zod.string().nullish()
+})
+
+
+/**
+ * @summary Generate and validate an R4 DiagnosticReport bundle for a saved analysis
+ */
+export const GetAnalysisFhirBundleParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const GetAnalysisFhirBundleResponse = zod.object({
+  "standard": zod.enum(['FHIR R4 4.0.1']),
+  "valid": zod.boolean(),
+  "validationMessages": zod.array(zod.string()),
+  "bundle": zod.record(zod.string(), zod.unknown())
+})
+
+
+/**
+ * @summary Inspect deployment files and service health without claiming deployment
+ */
+export const GetEnterprisePackageStatusResponse = zod.object({
+  "deploymentExecuted": zod.literal(false),
+  "files": zod.array(zod.object({
+  "path": zod.string(),
+  "exists": zod.boolean(),
+  "content": zod.string().nullable()
+})),
+  "healthChecks": zod.array(zod.record(zod.string(), zod.unknown()))
+})
+
+
+/**
+ * @summary List persisted application audit events
+ */
+export const ListAuditLogsResponseItem = zod.object({
+  "id": zod.string(),
+  "event": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "details": zod.record(zod.string(), zod.unknown())
+})
+export const ListAuditLogsResponse = zod.array(ListAuditLogsResponseItem)
+
+

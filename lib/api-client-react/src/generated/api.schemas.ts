@@ -789,6 +789,296 @@ export interface PpiNetwork {
   edges: PpiEdge[];
 }
 
+export interface ResearchDataStatus {
+  dataVersion: string;
+  sampleCount: number;
+  geneCount: number;
+  subtypes: string[];
+  sources: string[];
+  computedAt: string;
+  /** @nullable */
+  modelVersion?: string | null;
+}
+
+export type ResearchDataAvailabilityStatus = typeof ResearchDataAvailabilityStatus[keyof typeof ResearchDataAvailabilityStatus];
+
+
+export const ResearchDataAvailabilityStatus = {
+  ready: 'ready',
+  not_loaded: 'not_loaded',
+} as const;
+
+export interface ResearchDataAvailability {
+  status: ResearchDataAvailabilityStatus;
+  title: string;
+  reason: string;
+  requiredInputs: string[];
+  checkedSources: string[];
+  /** @nullable */
+  sourceVersion?: string | null;
+  /** @nullable */
+  checkedAt?: string | null;
+}
+
+export type ResearchPpiResponseNodesItem = { [key: string]: unknown };
+
+export type ResearchPpiResponseEdgesItem = { [key: string]: unknown };
+
+export interface ResearchPpiResponse {
+  source: string;
+  sourceVersion: string;
+  species: string;
+  requiredScore: number;
+  nodes: ResearchPpiResponseNodesItem[];
+  edges: ResearchPpiResponseEdgesItem[];
+  components: string[][];
+  computedAt: string;
+  dataVersion: string;
+}
+
+export type ResearchGenomicsResponseHeatmap = { [key: string]: unknown };
+
+export type ResearchGenomicsResponsePca = { [key: string]: unknown };
+
+export type ResearchGenomicsResponseUmap = { [key: string]: unknown };
+
+export type ResearchGenomicsResponseVolcano = { [key: string]: unknown };
+
+export interface ResearchGenomicsResponse {
+  computedAt: string;
+  dataVersion: string;
+  sampleCount: number;
+  geneCount: number;
+  heatmap: ResearchGenomicsResponseHeatmap;
+  pca: ResearchGenomicsResponsePca;
+  umap: ResearchGenomicsResponseUmap;
+  volcano: ResearchGenomicsResponseVolcano;
+}
+
+export interface ComputedBiomarker {
+  gene: string;
+  subtype: string;
+  effectSize: number;
+  pValue: number;
+  adjustedPValue: number;
+  meanInSubtype: number;
+  meanOther: number;
+  direction: string;
+}
+
+export type ResearchPathwayResponseStatus = typeof ResearchPathwayResponseStatus[keyof typeof ResearchPathwayResponseStatus];
+
+
+export const ResearchPathwayResponseStatus = {
+  ready: 'ready',
+  not_loaded: 'not_loaded',
+} as const;
+
+export type ResearchPathwayResponseTermsItem = { [key: string]: unknown };
+
+export interface ResearchPathwayResponse {
+  status: ResearchPathwayResponseStatus;
+  library: string;
+  libraryVersion: string;
+  /** @nullable */
+  computedAt: string | null;
+  note: string;
+  terms: ResearchPathwayResponseTermsItem[];
+}
+
+export type ResearchGeneMeanBySubtype = {[key: string]: number};
+
+export interface ResearchGene {
+  gene: string;
+  meanBySubtype: ResearchGeneMeanBySubtype;
+  overallMean: number;
+  overallStd: number;
+  /** @nullable */
+  importanceRank: number | null;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  descriptionSource?: string | null;
+}
+
+export type ResearchXaiResponseStatus = typeof ResearchXaiResponseStatus[keyof typeof ResearchXaiResponseStatus];
+
+
+export const ResearchXaiResponseStatus = {
+  ready: 'ready',
+  not_loaded: 'not_loaded',
+} as const;
+
+export type ResearchXaiResponseValuesItem = { [key: string]: unknown };
+
+export type ResearchXaiResponseFoldStabilityItem = { [key: string]: unknown };
+
+export interface ResearchXaiResponse {
+  status: ResearchXaiResponseStatus;
+  method: string;
+  /** @nullable */
+  computedAt: string | null;
+  /** @nullable */
+  dataVersion: string | null;
+  values: ResearchXaiResponseValuesItem[];
+  foldStability: ResearchXaiResponseFoldStabilityItem[];
+  note: string;
+}
+
+export type GnnComparisonResponseSplit = { [key: string]: unknown };
+
+export type GnnComparisonResponseGraph = { [key: string]: unknown };
+
+export type GnnComparisonResponseModelsItem = { [key: string]: unknown };
+
+export interface GnnComparisonResponse {
+  computedAt: string;
+  dataVersion: string;
+  source: string;
+  split: GnnComparisonResponseSplit;
+  graph: GnnComparisonResponseGraph;
+  models: GnnComparisonResponseModelsItem[];
+}
+
+export interface FederatedSimulationInput {
+  /**
+     * @minimum 3
+     * @maximum 5
+     */
+  clients: number;
+  /**
+     * @minimum 3
+     * @maximum 30
+     */
+  rounds: number;
+  unequalClassMix: boolean;
+}
+
+export type FederatedSimulationResponseLabel = typeof FederatedSimulationResponseLabel[keyof typeof FederatedSimulationResponseLabel];
+
+
+export const FederatedSimulationResponseLabel = {
+  Simulation: 'Simulation',
+} as const;
+
+export type FederatedSimulationResponseCentralized = { [key: string]: unknown };
+
+export type FederatedSimulationResponseHistoryItem = { [key: string]: unknown };
+
+export interface FederatedSimulationResponse {
+  computedAt: string;
+  dataVersion: string;
+  label: FederatedSimulationResponseLabel;
+  clients: number;
+  rounds: number;
+  unequalClassMix: boolean;
+  centralized: FederatedSimulationResponseCentralized;
+  history: FederatedSimulationResponseHistoryItem[];
+}
+
+export type ExternalValidationSampleValues = {[key: string]: number | null};
+
+export interface ExternalValidationSample {
+  /** @minLength 1 */
+  sampleId: string;
+  trueSubtype: string;
+  values: ExternalValidationSampleValues;
+}
+
+export interface ExternalValidationInput {
+  /** @minLength 1 */
+  sourceName: string;
+  /** @nullable */
+  sourceVersion?: string | null;
+  /**
+     * @minItems 1
+     * @maxItems 500
+     */
+  samples: ExternalValidationSample[];
+}
+
+export interface ValidationRunSummary {
+  id: string;
+  createdAt: string;
+  sourceName: string;
+  sampleCount: number;
+  evaluationLabel: string;
+  /** @nullable */
+  accuracy?: number | null;
+  /** @nullable */
+  weightedF1?: number | null;
+  /** @nullable */
+  macroF1?: number | null;
+}
+
+export type ExternalValidationResultMetrics = { [key: string]: unknown };
+
+export type ExternalValidationResultPerClassItem = { [key: string]: unknown };
+
+export type ExternalValidationResultConfusionMatrix = { [key: string]: unknown };
+
+export type ExternalValidationResultDuplicateWarningsItem = { [key: string]: unknown };
+
+export type ExternalValidationResultPredictionsItem = { [key: string]: unknown };
+
+export interface ExternalValidationResult {
+  id: string;
+  createdAt: string;
+  sourceName: string;
+  /** @nullable */
+  sourceVersion?: string | null;
+  evaluationLabel: string;
+  sampleCount: number;
+  metrics: ExternalValidationResultMetrics;
+  perClass: ExternalValidationResultPerClassItem[];
+  confusionMatrix: ExternalValidationResultConfusionMatrix;
+  duplicateWarnings: ExternalValidationResultDuplicateWarningsItem[];
+  lowCoverageShare: number;
+  predictions: ExternalValidationResultPredictionsItem[];
+  /** @nullable */
+  activeModelVersion?: string | null;
+}
+
+export type FhirBundleResponseStandard = typeof FhirBundleResponseStandard[keyof typeof FhirBundleResponseStandard];
+
+
+export const FhirBundleResponseStandard = {
+  FHIR_R4_401: 'FHIR R4 4.0.1',
+} as const;
+
+export type FhirBundleResponseBundle = { [key: string]: unknown };
+
+export interface FhirBundleResponse {
+  standard: FhirBundleResponseStandard;
+  valid: boolean;
+  validationMessages: string[];
+  bundle: FhirBundleResponseBundle;
+}
+
+export interface EnterpriseFile {
+  path: string;
+  exists: boolean;
+  /** @nullable */
+  content: string | null;
+}
+
+export type EnterprisePackageResponseHealthChecksItem = { [key: string]: unknown };
+
+export interface EnterprisePackageResponse {
+  deploymentExecuted: false;
+  files: EnterpriseFile[];
+  healthChecks: EnterprisePackageResponseHealthChecksItem[];
+}
+
+export type AuditLogEntryDetails = { [key: string]: unknown };
+
+export interface AuditLogEntry {
+  id: string;
+  event: string;
+  createdAt: string;
+  details: AuditLogEntryDetails;
+}
+
 export type SearchGenesParams = {
 q?: string;
 };
